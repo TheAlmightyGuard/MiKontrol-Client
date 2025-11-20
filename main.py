@@ -3,7 +3,8 @@ import discord
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-import bson
+from dotenv import load_dotenv
+import os
 from pymongo import ReturnDocument
 
 from dataStructure import Guild
@@ -11,8 +12,11 @@ from dataStructure import Guild
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
+load_dotenv()
+token = os.getenv("DISCORD_BOT_TOKEN")
+uri = os.getenv("DB_TOKEN")
+
 # MongoDB
-uri = "mongodb+srv://mikoto_Access:ianlourd15@mikontrol.ud3peyc.mongodb.net/?appName=MiKontrol"
 mongoclient = MongoClient(uri, server_api=ServerApi('1'))
 
 # FastAPI
@@ -199,7 +203,7 @@ async def run_discord_bot():
         print("Pinged your deployment. You successfully connected to MongoDB!")
 
         # Use the proper way to run the Discord client
-        await client.start("MTQzNzYwMjAyNDkxNjEyNzc4NA.GLwEYC.xHTslMSRWU14HFROxkacgtydAWZbOwVxCcW8vU")
+        await client.start(token)
     except Exception as e:
         print(f"Discord bot error: {e}")
 
