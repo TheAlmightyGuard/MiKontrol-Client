@@ -3,3 +3,4 @@ pymongo
 pydantic
 pydantic_core
 uvicorn
+fastapi
