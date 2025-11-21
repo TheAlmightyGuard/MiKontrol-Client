@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import discord
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 from pymongo import ReturnDocument
+import uvicorn
 
 from dataStructure import Guild
 
@@ -196,17 +198,30 @@ async def on_message(message : discord.Message):
         except Exception as e:
             print(e)
 
+# Function to run bot in existing event loop
+def run_discord_bot():
 
-async def run_discord_bot():
     try:
         mongoclient.admin.command('ping')
         print("Pinged your deployment. You successfully connected to MongoDB!")
-
-        # Use the proper way to run the Discord client
-        await client.start(token)
     except Exception as e:
-        print(f"Discord bot error: {e}")
+        print(f"MongoDB connection error: {e}")
+        return
+    
+    loop = asyncio.new_event_loop()  # Create a new event loop
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(client.start(token))  # Run the bot
 
-asyncio.create_task(run_discord_bot())
+def run_fastapi():
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT")))
 
-# uvicorn main:app --host 0.0.0.0 --port 10000
+# Start FastAPI in a separate thread
+fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)
+fastapi_thread.start()
+
+# Run the bot in a separate thread
+discord_thread = threading.Thread(target=run_discord_bot, daemon=True)
+discord_thread.start()
+
+# Keep the main thread alive
+discord_thread.join()
