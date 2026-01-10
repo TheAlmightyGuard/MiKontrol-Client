@@ -8,3 +8,4 @@ python-dotenv
 fastapi_utils
 colorama
 rich
+python-dotenv
