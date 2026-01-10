@@ -1,0 +1,127 @@
+import asyncio
+from typing import Optional
+from datetime import datetime
+from redis import Redis
+from models.moderation import ModerationTask
+from bot.client import MiBotClient
+from repositories.mod_repo import delete_task, get_redis_task, update_log
+
+redis_client : Optional[Redis] = None
+output_scan_proccess = False
+
+async def connect_redis(client : MiBotClient):
+    global redis_client
+
+    redis_client = Redis('localhost', 6379, decode_responses=True)
+
+    status = redis_client.ping()  # Test connection
+
+    if status:
+        print("Connected to Redis successfully.")
+        asyncio.create_task(mod_tasks(client))
+
+    else:
+        print("Failed to connect to Redis.")
+
+
+def add_task(src: ModerationTask) -> bool:
+    
+    result = redis_client.zadd(
+        name="moderation:expires",
+        mapping={
+            src.actionId: src.expiresAt.timestamp()
+        }
+    )
+
+    if result:
+        return True
+    return False
+
+def remove_task(actionId: str) -> bool:
+    count = redis_client.zrem("moderation:expires", actionId)
+
+    if count > 0:
+        return True
+    else:
+        return False
+
+
+async def mod_tasks(client: MiBotClient):
+
+    print("Moderation Worker has been initialized")
+    while not client.is_closed():
+        
+        if output_scan_proccess:
+            print("[/] REDIS MANAGER: Scanning Redis for expired tasks...")
+        current = datetime.now().timestamp()
+
+        score = redis_client.zrangebyscore(
+            name="moderation:expires",
+            min=0,
+            max=current
+        )
+
+        if output_scan_proccess:
+            print(score)
+
+        for id in score:
+            document : ModerationTask | None = await get_redis_task(actionId=id)
+
+            if output_scan_proccess:
+                print(f"[/] REDIS MANAGER: Document for id {id}... {document}")
+            if document is None:
+
+                if output_scan_proccess:
+                    print("[/] REDIS MANAGER: Due to no document found, deleting task from cache...")
+                redis_client.zrem("moderation:expires", id)
+                continue
+
+            
+            guild = await client.fetch_guild(document.guildId)
+
+            if guild is None:
+                print("Guild not found. Skipping...")
+                continue
+            
+            if document.type == 'T_MUTE':
+                member = await guild.fetch_member(document.targetId)
+                if member is None:
+                    print("Member not found. Skipping...")
+                    continue
+
+                for roleId in document.listRoles:
+                    role = guild.get_role(roleId)
+
+                    if role is not None:
+                        await member.add_roles(role)
+                    else:
+                        print("Role not found. Skipping...")
+
+            elif document.type == 'T_BAN':
+                user = client.get_user(document.targetId)
+                if user is None:
+                    try:
+                        user = await client.fetch_user(document.targetId)
+                    except:
+                        print(f"User ID [{document.targetId}] not found. Removing clutter...")
+                        redis_client.zrem("moderation:expires", document.actionId)
+                        continue
+
+                try:
+                    await guild.unban(
+                        user, 
+                        reason = f"Tasked by Redis. Action ID target {id}"
+                    )
+                except Exception as e:
+                    print(f"Error found: {e}")
+                    continue
+            
+            await delete_task(actionId=id)
+            redis_client.zrem("moderation:expires", document.actionId)
+            await update_log(document.actionId, "EXPIRED", 0, "Auto-expired moderation task.")
+            print(f"[/] REDIS MANAGER: Removing task with actionId: {document.actionId} that expired at {document.expiresAt}")
+            
+
+
+        await asyncio.sleep(5)
+

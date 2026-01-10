@@ -5,3 +5,6 @@ pydantic_core
 uvicorn
 fastapi
 python-dotenv
+fastapi_utils
+colorama
+rich
