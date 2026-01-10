@@ -9,3 +9,6 @@ fastapi_utils
 colorama
 rich
 python-dotenv
+redis
+pymongo
+dnspython
