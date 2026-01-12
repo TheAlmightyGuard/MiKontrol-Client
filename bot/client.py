@@ -2,18 +2,26 @@ import discord
 import os
 
 from discord.ext import commands
+from utils.cogs_functions import CogsStatus
+
+from models.internal import CogModel
+from rich.console import Console
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
+console = Console()
 class MiBotClient(commands.Bot):
+    cogStatus: CogsStatus
     
     def __init__(self):
         super().__init__(
             intents=intents,
             command_prefix="!",  # You can customize the command prefix here
         )
+
+        self.cogStatus = CogsStatus()
 
     async def setup_hook(self):
 
@@ -35,8 +43,19 @@ class MiBotClient(commands.Bot):
                     try:
                         await self.load_extension(cog)
                     except Exception as e:
-                        print(f'Failed to load extension {cog}, skipping. Error: {e}')
+                        self.cogStatus.cog_status_append(
+                            CogModel(
+                                commandName=file.capitalize()[:-3],
+                                filePath=f'./bot/commands/{folder}/{file}',
+                                status=False,
+                                error=str(e)
+                            )
+                        )
+        self.cogStatus.cogs_status()
                 
+    async def close(self):
+        console.log("Shutting down bot...")
+
 
 def create_client() -> MiBotClient:
     return MiBotClient()

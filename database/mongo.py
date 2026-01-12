@@ -4,8 +4,11 @@ from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 from typing import Optional
 
+from rich.console import Console
+
 client: Optional[AsyncMongoClient] = None
 db: AsyncDatabase = None
+console = Console()
 
 async def connect_db():
 
@@ -26,9 +29,9 @@ async def connect_db():
     
     
         await client.admin.command('ping')
-        print("Connected to MongoDB successfully!")
+        console.log("Connected to MongoDB successfully!")
     except Exception as e:
-        print(f"Error connecting to MongoDB: {e}")
+        console.log(f"Error connecting to MongoDB: {e}")
 
 def get_db() -> AsyncDatabase:
     if db is None:

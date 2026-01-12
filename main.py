@@ -5,7 +5,7 @@ from bot.client import create_client, MiBotClient
 from cache.redis_manager import connect_redis
 from database.mongo import connect_db, close_mongo
 
-
+from utils.cogs_functions import clear_console, pre_loading
 load_dotenv()
 token = os.getenv("DISCORD_BOT_TOKEN")
 client = create_client()
@@ -46,9 +46,15 @@ async def system():
         start_redis(client)
     )
 
+async def shutdown_bot():
+    await client.close()
+
 if __name__ == "__main__":
     try:
+        clear_console()
+        pre_loading()
         asyncio.run(system())
     except KeyboardInterrupt:
-        print("Shutting down services...")
-        asyncio.run(stop_db()) # To fix
+        # print("Shutting down services...")
+        # asyncio.run(stop_db()) # To fix
+        asyncio.run(shutdown_bot())

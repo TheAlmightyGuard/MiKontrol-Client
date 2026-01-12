@@ -2,26 +2,35 @@ from datetime import datetime
 from discord.ext import commands
 from discord import app_commands, Member, Embed, Color, Forbidden, NotFound
 from bot.client import MiBotClient
+from models.internal import CogModel
 from models.moderation import WarningEntry
-from utils.cogs_functions import cogs_status
 
 from services.moderation_services import add_warning, remove_warning, list_warnings
 from bot.embeds.warnings import create_warning_embed, create_empty_embed
 from bot.views.paginator_view import WarningsView
 
 import uuid
+import inspect
+
+from rich.console import Console
+
+console = Console()
 
 class Warn(commands.Cog):
     def __init__(self, client : MiBotClient):
         self.client = client
-    
+
     async def cog_load(self):
         for command in self.get_commands():
             if isinstance(command, commands.HybridCommand):
-                cogs_status(command.name.capitalize(), True)
-
-
-
+                self.client.cogStatus.cog_status_append(
+                    CogModel(
+                        commandName=command.name.capitalize(),
+                        filePath=inspect.getfile(command.callback),
+                        status=True,
+                        error=None
+                    )
+                )
     # +----------------------+
     # |  Warn Group Command  |
     # +----------------------+
@@ -183,6 +192,7 @@ class Warn(commands.Cog):
             await ctx.send(f"Hybrid Command Error! Type: {error.original}", ephemeral=True)
         else:
             await ctx.send(f"Unexpected error! Type: {type(error)} \n Error: {error}", ephemeral=True)
+            console.log(f"Unexpected error! Type: {type(error)} \n Error: {error}")
 
 
 

@@ -6,8 +6,11 @@ from models.moderation import ModerationTask
 from bot.client import MiBotClient
 from repositories.mod_repo import delete_task, get_redis_task, update_log
 
+from rich.console import Console
+
 redis_client : Optional[Redis] = None
 output_scan_proccess = False
+console = Console()
 
 async def connect_redis(client : MiBotClient):
     global redis_client
@@ -17,11 +20,11 @@ async def connect_redis(client : MiBotClient):
     status = redis_client.ping()  # Test connection
 
     if status:
-        print("Connected to Redis successfully.")
+        console.log("Connected to Redis successfully.")
         asyncio.create_task(mod_tasks(client))
 
     else:
-        print("Failed to connect to Redis.")
+        console.log("Failed to connect to Redis.")
 
 
 def add_task(src: ModerationTask) -> bool:
@@ -48,11 +51,11 @@ def remove_task(actionId: str) -> bool:
 
 async def mod_tasks(client: MiBotClient):
 
-    print("Moderation Worker has been initialized")
+    console.log("Moderation Worker has been initialized")
     while not client.is_closed():
         
         if output_scan_proccess:
-            print("[/] REDIS MANAGER: Scanning Redis for expired tasks...")
+            console.log("[/] REDIS MANAGER: Scanning Redis for expired tasks...")
         current = datetime.now().timestamp()
 
         score = redis_client.zrangebyscore(
@@ -62,17 +65,17 @@ async def mod_tasks(client: MiBotClient):
         )
 
         if output_scan_proccess:
-            print(score)
+            console.log(score)
 
         for id in score:
             document : ModerationTask | None = await get_redis_task(actionId=id)
 
             if output_scan_proccess:
-                print(f"[/] REDIS MANAGER: Document for id {id}... {document}")
+                console.log(f"[/] REDIS MANAGER: Document for id {id}... {document}")
             if document is None:
 
                 if output_scan_proccess:
-                    print("[/] REDIS MANAGER: Due to no document found, deleting task from cache...")
+                    console.log("[/] REDIS MANAGER: Due to no document found, deleting task from cache...")
                 redis_client.zrem("moderation:expires", id)
                 continue
 
@@ -80,13 +83,13 @@ async def mod_tasks(client: MiBotClient):
             guild = await client.fetch_guild(document.guildId)
 
             if guild is None:
-                print("Guild not found. Skipping...")
+                console.log("Guild not found. Skipping...")
                 continue
             
             if document.type == 'T_MUTE':
                 member = await guild.fetch_member(document.targetId)
                 if member is None:
-                    print("Member not found. Skipping...")
+                    console.log("Member not found. Skipping...")
                     continue
 
                 for roleId in document.listRoles:
@@ -95,7 +98,7 @@ async def mod_tasks(client: MiBotClient):
                     if role is not None:
                         await member.add_roles(role)
                     else:
-                        print("Role not found. Skipping...")
+                        console.log("Role not found. Skipping...")
 
             elif document.type == 'T_BAN':
                 user = client.get_user(document.targetId)
@@ -103,7 +106,7 @@ async def mod_tasks(client: MiBotClient):
                     try:
                         user = await client.fetch_user(document.targetId)
                     except:
-                        print(f"User ID [{document.targetId}] not found. Removing clutter...")
+                        console.log(f"User ID [{document.targetId}] not found. Removing clutter...")
                         redis_client.zrem("moderation:expires", document.actionId)
                         continue
 
@@ -113,13 +116,13 @@ async def mod_tasks(client: MiBotClient):
                         reason = f"Tasked by Redis. Action ID target {id}"
                     )
                 except Exception as e:
-                    print(f"Error found: {e}")
+                    console.log(f"Error found: {e}")
                     continue
             
             await delete_task(actionId=id)
             redis_client.zrem("moderation:expires", document.actionId)
             await update_log(document.actionId, "EXPIRED", 0, "Auto-expired moderation task.")
-            print(f"[/] REDIS MANAGER: Removing task with actionId: {document.actionId} that expired at {document.expiresAt}")
+            console.log(f"[/] REDIS MANAGER: Removing task with actionId: {document.actionId} that expired at {document.expiresAt}")
             
 
 

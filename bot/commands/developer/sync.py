@@ -1,16 +1,11 @@
 from discord.ext import commands
 
-from utils.cogs_functions import cogs_status
 
 class Sync(commands.Cog):
 
     def __init__(self, client: commands.Bot):
         self.client = client
 
-    async def cog_load(self):
-        for command in self.get_commands():
-            if isinstance(command, commands.HybridCommand):
-                cogs_status(command.name.capitalize(), True)
 
     @commands.hybrid_command(name="sync", help="Syncs the bot's commands with Discord.")
     @commands.is_owner()

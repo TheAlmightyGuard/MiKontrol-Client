@@ -3,22 +3,34 @@ from discord.ext import commands
 from discord import app_commands, Embed, Color, Forbidden, User
 import discord
 from bot.client import MiBotClient
-from utils.cogs_functions import cogs_status
+
+from models.internal import CogModel
 
 from services.moderation_services import add_moderation_log
 
 import uuid
+import inspect
+
+from rich.console import Console
+
+console = Console()
 
 class Kick(commands.Cog):
     def __init__(self, client : MiBotClient):
         self.client = client
-    
+
     async def cog_load(self):
         for command in self.get_commands():
             if isinstance(command, commands.HybridCommand):
-                cogs_status(command.name.capitalize(), True)
-
-
+                self.client.cogStatus.cog_status_append(
+                    CogModel(
+                        commandName=command.name.capitalize(),
+                        filePath=inspect.getfile(command.callback),
+                        status=True,
+                        error=None
+                    )
+                )
+                
     # +-----------------+
     # |   Ban Command   |
     # +-----------------+
@@ -115,6 +127,7 @@ class Kick(commands.Cog):
             await ctx.send("Error! The specified user was not found!", ephemeral=True)
         elif isinstance(error, discord.Forbidden) or isinstance(error, Forbidden):
             await ctx.send("Error! Bot lacks the necessary permissions to execute this command!", ephemeral=True)
+            console.log(f"Unexpected error! Type: {type(error)} \n Error: {error}")
 
 
 

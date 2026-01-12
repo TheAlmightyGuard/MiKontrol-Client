@@ -2,17 +2,10 @@ import discord
 from discord.ext import commands
 from discord import Forbidden
 from bot.client import MiBotClient
-from utils.cogs_functions import cogs_status
 
 class Ping(commands.Cog):
     def __init__(self, client : MiBotClient):
         self.client = client
-
-    async def cog_load(self):
-        for command in self.get_commands():
-            if isinstance(command, commands.HybridCommand):
-                cogs_status(command.name.capitalize(), True)
-
 
 
     # +-----------------+
