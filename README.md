@@ -1,4 +1,4 @@
-<img src="https://github.com/TheAlmightyGuard/MiKontrol-Client/blob/208c7e96ca21a31df711ce277436bd148d5e9bff/images/bot_logo.png" width="120" height="120">
+<img src="https://github.com/TheAlmightyGuard/Mikoto-Management/blob/ca114560ea6e4e5370edaa20e435659386e7abc8/logo.svg" width="120" height="120">
 
 # Mikoto Management
 
