@@ -89,9 +89,9 @@ def pre_loading():
 
         while not progress.finished:
             progress.update(task1, advance=0.9)
-            progress.update(task4, advance=0.35)
-            progress.update(task2, advance=0.3)
-            progress.update(task3, advance=0.2)
+            progress.update(task4, advance=0.9)
+            progress.update(task2, advance=0.9)
+            progress.update(task3, advance=0.9)
             time.sleep(0.02)
 
     time.sleep(1)
