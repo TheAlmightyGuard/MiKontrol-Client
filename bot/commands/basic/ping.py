@@ -1,13 +1,25 @@
+import inspect
 import discord
 from discord.ext import commands
 from discord import Forbidden
 from bot.client import MiBotClient
+from models.internal import CogModel
 
 class Ping(commands.Cog):
     def __init__(self, client : MiBotClient):
         self.client = client
 
-
+    async def cog_load(self):
+        for command in self.get_commands():
+            if isinstance(command, commands.HybridCommand):
+                self.client.cogStatus.cog_status_append(
+                    CogModel(
+                        commandName=command.name.capitalize(),
+                        filePath=inspect.getfile(command.callback),
+                        status=True,
+                        error=None
+                    )
+                )
     # +-----------------+
     # |  Ping Command   |
     # +-----------------+
