@@ -1,6 +1,6 @@
 import discord, uuid, os
 from datetime import datetime
-
+from rich.console import Console
 class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
     violator = discord.ui.Label(
         text='Offender',
@@ -48,13 +48,37 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
 
     async def on_submit(self, interaction: discord.Interaction):
 
+        console = Console()
+
         assert isinstance(self.topic.component, discord.ui.Select)
         assert isinstance(self.violation.component, discord.ui.Select)
         assert isinstance(self.evidence.component, discord.ui.TextInput)
 
         ticket_id = str(uuid.uuid7())
 
-        category = discord.utils.get(interaction.guild.categories, id=os.getenv("MUTED_CATEGORY"))
+        category = interaction.guild.get_channel(os.getenv("TICKET_CATEGORY"))
+
+        if category is None:
+            try:
+                category = await interaction.guild.fetch_channel(os.getenv("TICKET_CATEGORY"))
+            except Exception as e:
+                category = None
+
+        mod_role = interaction.guild.get_role(os.getenv("MOD_ROLE"))
+        
+        if mod_role is None:
+            try:
+                mod_role = await interaction.guild.fetch_role(os.getenv("MOD_ROLE"))
+            except Exception as e:
+                mod_role = None
+
+        mod_mention = ""
+
+        if mod_role is not None:
+            mod_mention = f"<@&{mod_role.id}>"
+
+
+
         text_channel = await interaction.guild.create_text_channel(
             name=ticket_id,
             reason=f"Ticket creation by: {interaction.user.name}",
@@ -97,7 +121,9 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
         )
 
         await text_channel.send(embed=embed)
-        await text_channel.send(f"@everyone") # To replace with pinging mod role and reporter user
+        await text_channel.send( mod_mention + f"<@{interaction.user.id}>" ) # To replace with pinging mod role and reporter user
+
+        await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}")
         
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await interaction.response.send_message(f'Oops! Something went wrong. {error}', ephemeral=True)
