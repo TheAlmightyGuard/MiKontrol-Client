@@ -1,6 +1,69 @@
 import discord, uuid, os
 from datetime import datetime
-from rich.console import Console
+
+class ModerationModalView(discord.ui.View):
+    def __init__(self, modal : ModerationModal):
+        self.modal = modal
+        super().__init__()
+
+    @discord.ui.button(label="[MOD] Take the case", style=discord.ButtonStyle.primary)
+    async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        
+        modal = self.modal
+
+        assert isinstance(modal.topic.component, discord.ui.Select)
+        assert isinstance(modal.violation.component, discord.ui.Select)
+        assert isinstance(modal.evidence.component, discord.ui.TextInput)
+
+        embed = discord.Embed(
+            title="A Moderator Ticket has appeared!",
+            color=discord.Color.from_str("#ff6b00")
+        )
+        embed.set_footer(
+            text="Powered by MiKontrol"
+        )
+
+        embed.add_field(
+            name="Reporter",
+            value=f"{interaction.user.mention}",
+            inline=True
+        )
+        embed.add_field(
+            name="Report Date:",
+            value=f"<t:{round(datetime.now().timestamp())}:f>",
+            inline=True
+        )
+        embed.add_field(
+            name="Report Environment",
+            value=f"{modal.topic.component.values[0]}",
+            inline=False
+        )
+        embed.add_field(
+            name="Report Type",
+            value=f"{modal.violation.component.values[0]}",
+            inline=False
+        )
+        embed.add_field(
+            name="Evidence",
+            value=f"{modal.evidence.component.value}",
+            inline=False
+        )
+        embed.add_field(
+            name="Assigned Moderator:",
+            value=f"{interaction.user.mention}",
+            inline=False
+        )
+
+        button.disabled = True
+        button.label = "Taken by Moderator"
+
+        await interaction.response.edit_message(
+            embed=embed,
+            view=self
+        )
+
+
+
 class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
     violator = discord.ui.Label(
         text='Offender',
@@ -48,7 +111,7 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
 
     async def on_submit(self, interaction: discord.Interaction):
 
-        console = Console()
+        buttons = ModerationModalView(self)
 
         assert isinstance(self.topic.component, discord.ui.Select)
         assert isinstance(self.violation.component, discord.ui.Select)
@@ -120,8 +183,8 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
             inline=False
         )
 
-        await text_channel.send(embed=embed)
-        await text_channel.send( mod_mention + f"<@{interaction.user.id}>" ) # To replace with pinging mod role and reporter user
+        await text_channel.send(embed=embed, view=buttons)
+        self.msg = await text_channel.send( mod_mention + f"<@{interaction.user.id}>" ) # To replace with pinging mod role and reporter user
 
         await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}")
         

@@ -4,9 +4,9 @@ from typing import Optional, Literal
 
 
 class TicketEntry(MiBaseModel):
-    ticket_number: int
+    ticket_id: str
     author_id: int
-    assigned_staff: int
+    assigned_staff: Optional[int] = None
     ticket_channel_id: int
     ticket_category_id: Optional[int] = None
     
