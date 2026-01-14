@@ -10,6 +10,16 @@ class ModerationModalView(discord.ui.View):
     @discord.ui.button(label="[MOD] Take the case", style=discord.ButtonStyle.primary, custom_id="persistent:mod_button")
     async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
 
+        modId = int(os.getenv("MOD_ROLE"))
+        if not (interaction.user.get_role(modId) or interaction.user.guild_permissions.kick_members):
+            await interaction.response.send_message(
+                content="You don't have permissions to accept tickets!",
+                ephemeral=True,
+                delete_after=10
+            )
+            return
+
+
         embed = interaction.message.embeds[0]
         embed = embed.copy()
 
