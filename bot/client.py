@@ -7,6 +7,8 @@ from utils.cogs_functions import CogsStatus
 from models.internal import CogModel
 from rich.console import Console
 
+from bot.modals.ticketModals import ModerationModalView
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
@@ -52,6 +54,8 @@ class MiBotClient(commands.Bot):
                             )
                         )
         self.cogStatus.cogs_status()
+
+        self.add_view(view=ModerationModalView())
                 
     async def close(self):
         console.log("Shutting down bot...")

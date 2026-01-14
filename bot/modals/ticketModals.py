@@ -2,52 +2,33 @@ import discord, uuid, os
 from datetime import datetime
 
 class ModerationModalView(discord.ui.View):
-    def __init__(self, modal : ModerationModal):
+    def __init__(self, modal : ModerationModal = None):
         self.modal = modal
-        super().__init__()
+        self.error = None
+        super().__init__(timeout=None)
 
-    @discord.ui.button(label="[MOD] Take the case", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label="[MOD] Take the case", style=discord.ButtonStyle.primary, custom_id="persistent:mod_button")
     async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        embed = interaction.message.embeds[0]
+        embed = embed.copy()
+
+        violatorId = ""
+        for field in embed.fields:
+            if field.name == "Offender":
+                violatorId = int(field.value[2:-1])
+
+
+        if interaction.user.id == violatorId:
+
+            self.error = await interaction.response.send_message(
+                content="You cannot accept to moderate a ticket against you!",
+                delete_after=10,
+                ephemeral=True
+            )
+            return
+
         
-        modal = self.modal
-
-        assert isinstance(modal.topic.component, discord.ui.Select)
-        assert isinstance(modal.violation.component, discord.ui.Select)
-        assert isinstance(modal.evidence.component, discord.ui.TextInput)
-
-        embed = discord.Embed(
-            title="A Moderator Ticket has appeared!",
-            color=discord.Color.from_str("#ff6b00")
-        )
-        embed.set_footer(
-            text="Powered by MiKontrol"
-        )
-
-        embed.add_field(
-            name="Reporter",
-            value=f"{interaction.user.mention}",
-            inline=True
-        )
-        embed.add_field(
-            name="Report Date:",
-            value=f"<t:{round(datetime.now().timestamp())}:f>",
-            inline=True
-        )
-        embed.add_field(
-            name="Report Environment",
-            value=f"{modal.topic.component.values[0]}",
-            inline=False
-        )
-        embed.add_field(
-            name="Report Type",
-            value=f"{modal.violation.component.values[0]}",
-            inline=False
-        )
-        embed.add_field(
-            name="Evidence",
-            value=f"{modal.evidence.component.value}",
-            inline=False
-        )
         embed.add_field(
             name="Assigned Moderator:",
             value=f"{interaction.user.mention}",
@@ -116,6 +97,7 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
         assert isinstance(self.topic.component, discord.ui.Select)
         assert isinstance(self.violation.component, discord.ui.Select)
         assert isinstance(self.evidence.component, discord.ui.TextInput)
+        assert isinstance(self.violator.component, discord.ui.UserSelect)
 
         ticket_id = str(uuid.uuid7())
 
@@ -163,9 +145,14 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
             inline=True
         )
         embed.add_field(
+            name="Offender",
+            value=f"{self.violator.component.values[0].mention}",
+            inline=True
+        )
+        embed.add_field(
             name="Report Date:",
             value=f"<t:{round(datetime.now().timestamp())}:f>",
-            inline=True
+            inline=False
         )
         embed.add_field(
             name="Report Environment",
