@@ -1,11 +1,10 @@
-import discord, uuid, os
+import discord, os
 from datetime import datetime
 
 from services.ticket_services import ticket_create, ticket_assign
 
-
 class ModerationModalView(discord.ui.View):
-    def __init__(self, modal : ModerationModal = None):
+    def __init__(self, modal = None):
         self.modal = modal
         self.error = None
         super().__init__(timeout=None)
@@ -62,7 +61,6 @@ class ModerationModalView(discord.ui.View):
             embed=embed,
             view=self
         )
-
 
 
 class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
