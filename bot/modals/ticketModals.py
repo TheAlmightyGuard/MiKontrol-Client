@@ -1,6 +1,9 @@
 import discord, uuid, os
 from datetime import datetime
 
+from services.ticket_services import ticket_create, ticket_assign
+
+
 class ModerationModalView(discord.ui.View):
     def __init__(self, modal : ModerationModal = None):
         self.modal = modal
@@ -23,16 +26,21 @@ class ModerationModalView(discord.ui.View):
         embed = interaction.message.embeds[0]
         embed = embed.copy()
 
-        violatorId = ""
+        violatorId = 0
+        reporterId = 0
+
         for field in embed.fields:
             if field.name == "Offender":
                 violatorId = int(field.value[2:-1])
 
+            elif field.name == "Reporter":
+                reporterId = int(field.value[2:-1])
 
-        if interaction.user.id == violatorId:
+
+        if (interaction.user.id == violatorId) or (interaction.user.id == reporterId):
 
             self.error = await interaction.response.send_message(
-                content="You cannot accept to moderate a ticket against you!",
+                content="You cannot accept to moderate a ticket against you / you created yourself!",
                 delete_after=10,
                 ephemeral=True
             )
@@ -48,6 +56,8 @@ class ModerationModalView(discord.ui.View):
         button.disabled = True
         button.label = "Taken by Moderator"
 
+        await ticket_assign(self.modal.id, interaction.user.id)
+
         await interaction.response.edit_message(
             embed=embed,
             view=self
@@ -55,7 +65,7 @@ class ModerationModalView(discord.ui.View):
 
 
 
-class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
+class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
     violator = discord.ui.Label(
         text='Offender',
         description='Enter the name of the Violator',
@@ -109,8 +119,6 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
         assert isinstance(self.evidence.component, discord.ui.TextInput)
         assert isinstance(self.violator.component, discord.ui.UserSelect)
 
-        ticket_id = str(uuid.uuid7())
-
         category = interaction.guild.get_channel(os.getenv("TICKET_CATEGORY"))
 
         if category is None:
@@ -132,15 +140,12 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
         if mod_role is not None:
             mod_mention = f"<@&{mod_role.id}>"
 
-
-
         text_channel = await interaction.guild.create_text_channel(
-            name=ticket_id,
+            name=self.id,
             reason=f"Ticket creation by: {interaction.user.name}",
             category=category
         )
         
-
         embed = discord.Embed(
             title="A Moderator Ticket has appeared!",
             color=discord.Color.from_str("#ff6b00")
@@ -181,9 +186,20 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
         )
 
         await text_channel.send(embed=embed, view=buttons)
-        self.msg = await text_channel.send( mod_mention + f"<@{interaction.user.id}>" ) # To replace with pinging mod role and reporter user
+        self.msg = await text_channel.send( mod_mention + f" <@{interaction.user.id}>" ) # To replace with pinging mod role and reporter user
 
+        self.stop()
+
+        await ticket_create(
+            ticket_id=self.id,
+            author_id=interaction.user.id,
+            ticket_channel=text_channel.id,
+            ticket_category=text_channel.category_id
+        )
+        
+        
         await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}")
+
         
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await interaction.response.send_message(f'Oops! Something went wrong. {error}', ephemeral=True)

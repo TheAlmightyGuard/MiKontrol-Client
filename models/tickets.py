@@ -14,12 +14,12 @@ class TicketEntry(MiBaseModel):
     priority: Literal["Low", "Medium", "High"] = "Low"
     status: Literal[
         "OPEN",
-        "IN_PROGRESS"
+        "IN_PROGRESS",
         "RESOLVED",
         "EXPIRED",
         "CLOSED"
     ] = "OPEN"
 
-    closed_at : datetime
-    closed_by : int
-    closed_reason : str
+    closed_at : Optional[datetime] = None
+    closed_by : Optional[int] = None
+    closed_reason : Optional[str] = None

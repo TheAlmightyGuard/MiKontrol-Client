@@ -1,4 +1,5 @@
-from typing import Literal
+import asyncio
+from typing import Literal, Optional
 from discord.ext import commands
 from bot.client import MiBotClient
 
@@ -6,7 +7,11 @@ from models.internal import CogModel
 import inspect
 import discord
 
+import uuid
+from datetime import datetime, timedelta
+
 from bot.modals.ticketModals import ModerationModal
+from services.ticket_services import ticket_close
 
 class Ticket(commands.Cog):
     def __init__(self, client : MiBotClient):
@@ -37,21 +42,62 @@ class Ticket(commands.Cog):
     async def ticket(self, ctx : commands.Context, option: Literal["MODERATION", "BUG/GLITCH", "GENERAL"]):
 
         if ctx.interaction:
-            await ctx.interaction.response.send_modal(ModerationModal())
+            modal = ModerationModal()
+
+            modal.id = str(uuid.uuid7())
+
+            await ctx.interaction.response.send_modal(modal)
+
+            await modal.wait()
         else:
             await ctx.send("This command can only be used via slash commands (/).", ephemeral=True)
 
     @ticket.command(
-        name="remove",
+        name="close",
         description="Close a ticket"
     )
-    async def close_ticket(self, ctx : commands.Context):
+    async def close_ticket(self, ctx : commands.Context, *, ticket_id : Optional[str] = None):
 
         if ctx.interaction:
-            await ctx.interaction.response.send_modal(ModerationModal())
+
+            result = None
+
+            if ticket_id is None:
+                result = await ticket_close(ctx.channel.name, ctx.author.id, reason=f"User ({ctx.author.name}) had closed the ticket.")
+            else:
+                result = await ticket_close(ticket_id, ctx.author.id, reason=f"User ({ctx.author.name}) had closed the ticket.")
+
+            if result:
+                embed = discord.Embed(
+                    title="Ticketing System",
+                    color=discord.Color.from_str("#ff6b00")
+                )
+                embed.set_footer(
+                    text="Powered by MiKontrol"
+                )
+
+                embed.add_field(
+                    name=f"Ticket {ticket_id} Closed has been closed by",
+                    value=ctx.author.mention
+                )
+
+                await ctx.send(embed=embed)
+
+                delta = datetime.now() + timedelta(seconds=10)
+                delta = round(delta.timestamp())
+
+                await ctx.send(f"Closing channel <t:{delta}:R>")
+
+                await asyncio.sleep(10)
+
+                await ctx.channel.delete(reason=f"Ticket {ticket_id} Closed has been closed by {ctx.author.name}")
+
+            else:
+                await ctx.send("No ticket was found")
         else:
             await ctx.send("This command can only be used via slash commands (/).", ephemeral=True)
-        
+
+
 async def setup(client: MiBotClient):
     await client.add_cog(Ticket(client))
 
