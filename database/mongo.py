@@ -1,4 +1,5 @@
 import os
+import certifi
 
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
@@ -23,7 +24,8 @@ async def connect_db():
             socketTimeoutMS=3000,
             maxPoolSize=100,
             minPoolSize=10,
-            tls=True
+            tls=True,
+            tlsCAFile=certifi.where()
         )
 
         db = client.get_database("mikontrol")
