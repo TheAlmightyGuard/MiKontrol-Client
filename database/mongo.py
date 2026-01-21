@@ -22,7 +22,8 @@ async def connect_db():
             connectTimeoutMS=3000,
             socketTimeoutMS=3000,
             maxPoolSize=100,
-            minPoolSize=10
+            minPoolSize=10,
+            tls=True
         )
 
         db = client.get_database("mikontrol")
