@@ -1,4 +1,4 @@
-<img src="https://github.com/TheAlmightyGuard/MiKontrol-Client/blob/208c7e96ca21a31df711ce277436bd148d5e9bff/images/bot_logo.png" width="120" height="120">
+<img src="https://github.com/TheAlmightyGuard/MiKontrol-Client/blob/68f946fb68c9035a1d6230d85a3ffb4b94bab447/images/bot_logo.png" width="250" height="250">
 
 # MiKontrol Client
 The MiKontrol Client ('back-end') is a discord-based bot of which will connect into different areas such as different games and social media to connect all into one discord server.
@@ -12,10 +12,10 @@ Development Branch (_DEVELOPER ACCESS ONLY_): https://discord.com/oauth2/authori
 Start of production: March 15th, 2025\
 Mikoto Management v0.1a ALPHA-RELEASE: TBD
 
-# Project Roadmap (As of March 15th, 2025)
-Below is the roadmap of projects to be made in order. Top to bottom in priority.
+# Project Roadmap
+_As of March 15th, 2025_\
 
-## [🟠] - Mikoto Management
+### [🟠] - Mikoto Management
 * Platform of creation: VSCode
 * Language: Python (Discord.py)
 * Platform of usage: Discord
