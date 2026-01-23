@@ -3,6 +3,8 @@ from datetime import datetime
 
 from services.ticket_services import ticket_create, ticket_assign
 
+
+
 class ModerationModalView(discord.ui.View):
     def __init__(self, modal = None):
         self.modal = modal
@@ -13,6 +15,7 @@ class ModerationModalView(discord.ui.View):
     async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         modId = int(os.getenv("MOD_ROLE"))
+        devId = int(os.getenv("DEV_ROLE"))
         if not (interaction.user.get_role(modId) or interaction.user.guild_permissions.kick_members):
             await interaction.response.send_message(
                 content="You don't have permissions to accept tickets!",
@@ -63,7 +66,20 @@ class ModerationModalView(discord.ui.View):
         )
 
 
-class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
+class ModerationModal(discord.ui.Modal, title="Open a ticket"):
+
+    type = discord.ui.Label(
+        text='Report Type',
+        description='Select the type of the report.',
+        component=discord.ui.Select(
+            placeholder='Choose a type...',
+            options=[
+                discord.SelectOption(label='Moderation', description='Report will be directed to Moderation Team'),
+                discord.SelectOption(label='Development', description='Report will be directed to Developer Team Support')
+            ],
+        ),
+    )
+    
     violator = discord.ui.Label(
         text='Offender',
         description='Enter the name of the Violator',
@@ -73,11 +89,11 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
         ),
     )
 
-    topic = discord.ui.Label(
-        text='Report Type',
-        description='Select the type of the report.',
+    environment = discord.ui.Label(
+        text='Report Environment',
+        description='Select the type of the environment.',
         component=discord.ui.Select(
-            placeholder='Choose a type...',
+            placeholder='Choose an environment type...',
             options=[
                 discord.SelectOption(label='Text Message', description='Violation was conducted in a text message environment'),
                 discord.SelectOption(label='Voice Message', description='Violation was conducted in a voice transmitted environment')
@@ -112,12 +128,15 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
 
         buttons = ModerationModalView(self)
 
-        assert isinstance(self.topic.component, discord.ui.Select)
+        assert isinstance(self.type.component, discord.ui.Select)
+        assert isinstance(self.environment.component, discord.ui.Select)
         assert isinstance(self.violation.component, discord.ui.Select)
         assert isinstance(self.evidence.component, discord.ui.TextInput)
         assert isinstance(self.violator.component, discord.ui.UserSelect)
 
         category = interaction.guild.get_channel(os.getenv("TICKET_CATEGORY"))
+        agent = self.type.component.values[0]
+        agent_ping = ""
 
         if category is None:
             try:
@@ -125,18 +144,27 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
             except Exception as e:
                 category = None
 
-        mod_role = interaction.guild.get_role(os.getenv("MOD_ROLE"))
-        
-        if mod_role is None:
-            try:
-                mod_role = await interaction.guild.fetch_role(os.getenv("MOD_ROLE"))
-            except Exception as e:
-                mod_role = None
 
-        mod_mention = ""
+        if agent == "Moderation":
+            agent_ping = interaction.guild.get_role(os.getenv("MOD_ROLE"))
 
-        if mod_role is not None:
-            mod_mention = f"<@&{mod_role.id}>"
+            if agent_ping is None:
+                try:
+                    agent_ping = await interaction.guild.fetch_role(os.getenv("MOD_ROLE"))
+                except:
+                    agent_ping = None
+        elif agent == "Development":
+            agent_ping = interaction.guild.get_role(os.getenv("DEV_ROLE"))
+
+            if agent_ping is None:
+                try:
+                    agent_ping = await interaction.guild.fetch_role(os.getenv("DEV_ROLE"))
+                except:
+                    agent_ping = None
+
+        if agent_ping is not None:
+            mod_mention = f"<@&{agent_ping.id}>"
+            
 
         text_channel = await interaction.guild.create_text_channel(
             name=self.id,
@@ -169,7 +197,7 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
         )
         embed.add_field(
             name="Report Environment",
-            value=f"{self.topic.component.values[0]}",
+            value=f"{self.environment.component.values[0]}",
             inline=False
         )
         embed.add_field(
@@ -184,7 +212,7 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
         )
 
         await text_channel.send(embed=embed, view=buttons)
-        self.msg = await text_channel.send( mod_mention + f" <@{interaction.user.id}>" ) # To replace with pinging mod role and reporter user
+        self.msg = await text_channel.send( mod_mention + f" <@{interaction.user.id}>" )
 
         self.stop()
 

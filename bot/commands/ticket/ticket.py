@@ -39,7 +39,7 @@ class Ticket(commands.Cog):
         with_app_command=True,
         fallback="add"
     )
-    async def ticket(self, ctx : commands.Context, option: Literal["MODERATION", "BUG/GLITCH", "GENERAL"]):
+    async def ticket(self, ctx : commands.Context):
 
         if ctx.interaction:
             modal = ModerationModal()
