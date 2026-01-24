@@ -7,7 +7,7 @@ from utils.cogs_functions import CogsStatus
 from models.internal import CogModel
 from rich.console import Console
 
-from bot.modals.ticketModals import ModerationModalView
+from bot.modals.ticketModal.samples.moderation import ModerationModalView
 
 intents = discord.Intents.default()
 intents.message_content = True

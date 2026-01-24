@@ -10,7 +10,7 @@ import discord
 import uuid
 from datetime import datetime, timedelta
 
-from bot.modals.ticketModals import ModerationModal
+from bot.modals.ticketModal.genericTicket import GeneralModal
 from services.ticket_services import ticket_close
 
 class Ticket(commands.Cog):
@@ -42,7 +42,7 @@ class Ticket(commands.Cog):
     async def ticket(self, ctx : commands.Context):
 
         if ctx.interaction:
-            modal = ModerationModal()
+            modal = GeneralModal()
 
             modal.id = str(uuid.uuid7())
 

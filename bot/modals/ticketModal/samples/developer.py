@@ -11,11 +11,10 @@ class ModerationModalView(discord.ui.View):
         self.error = None
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="[MOD] Take the case", style=discord.ButtonStyle.primary, custom_id="persistent:mod_button")
+    @discord.ui.button(label="💼 Take the case", style=discord.ButtonStyle.grey, custom_id="persistent:dev_button")
     async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        modId = int(os.getenv("MOD_ROLE"))
-        devId = int(os.getenv("DEV_ROLE"))
+        modId = int(os.getenv("DEV_ROLE"))
         if not (interaction.user.get_role(modId) or interaction.user.guild_permissions.kick_members):
             await interaction.response.send_message(
                 content="You don't have permissions to accept tickets!",
@@ -66,59 +65,21 @@ class ModerationModalView(discord.ui.View):
         )
 
 
-class ModerationModal(discord.ui.Modal, title="Open a ticket"):
+class ModerationModal(discord.ui.Modal, title="Open a ticket [ Developer ]"):
 
-    type = discord.ui.Label(
-        text='Report Type',
-        description='Select the type of the report.',
-        component=discord.ui.Select(
-            placeholder='Choose a type...',
-            options=[
-                discord.SelectOption(label='Moderation', description='Report will be directed to Moderation Team'),
-                discord.SelectOption(label='Development', description='Report will be directed to Developer Team Support')
-            ],
-        ),
-    )
     
-    violator = discord.ui.Label(
-        text='Offender',
-        description='Enter the name of the Violator',
-        component=discord.ui.UserSelect(
-            placeholder="Choose a member",
+    issue = discord.ui.Label(
+        text='Issue Descriptionb',
+        description='Enter the description of your issue',
+        component=discord.ui.TextInput(
+            placeholder="A function wasn't working! ;o",
             required=True
-        ),
-    )
-
-    environment = discord.ui.Label(
-        text='Report Environment',
-        description='Select the type of the environment.',
-        component=discord.ui.Select(
-            placeholder='Choose an environment type...',
-            options=[
-                discord.SelectOption(label='Text Message', description='Violation was conducted in a text message environment'),
-                discord.SelectOption(label='Voice Message', description='Violation was conducted in a voice transmitted environment')
-            ],
-        ),
-    )
-
-    violation = discord.ui.Label(
-        text='Type of Violation',
-        description='Select the type of violation',
-        component=discord.ui.Select(
-            placeholder='Choose a violation...',
-            options=[
-                discord.SelectOption(label='Harassment', description='Harassed other members'),
-                discord.SelectOption(label='Spam', description='Spammed within environment'),
-                discord.SelectOption(label='NSFW', description='Posted NSFW content within environment'),
-                discord.SelectOption(label='Hate Speech', description='Conducting hate speech directly / indirectly others'),
-                discord.SelectOption(label='Others', description='Anything that are not above to be reported'),
-            ],
         ),
     )
 
     evidence = discord.ui.Label(
         text='Evidence',
-        description='Enter your evidence',
+        description='Enter your evidence such as error logs or video evidence',
         component=discord.ui.TextInput(
             placeholder="Enter evidence(s) link here"
         )
@@ -128,15 +89,13 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket"):
 
         buttons = ModerationModalView(self)
 
-        assert isinstance(self.type.component, discord.ui.Select)
         assert isinstance(self.environment.component, discord.ui.Select)
         assert isinstance(self.violation.component, discord.ui.Select)
         assert isinstance(self.evidence.component, discord.ui.TextInput)
         assert isinstance(self.violator.component, discord.ui.UserSelect)
 
         category = interaction.guild.get_channel(os.getenv("TICKET_CATEGORY"))
-        agent = self.type.component.values[0]
-        agent_ping = ""
+        agent_ping = interaction.guild.get_role(os.getenv("MOD_ROLE"))
 
         if category is None:
             try:
@@ -144,24 +103,12 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket"):
             except Exception as e:
                 category = None
 
-
-        if agent == "Moderation":
-            agent_ping = interaction.guild.get_role(os.getenv("MOD_ROLE"))
-
-            if agent_ping is None:
-                try:
-                    agent_ping = await interaction.guild.fetch_role(os.getenv("MOD_ROLE"))
-                except:
-                    agent_ping = None
-        elif agent == "Development":
-            agent_ping = interaction.guild.get_role(os.getenv("DEV_ROLE"))
-
-            if agent_ping is None:
-                try:
-                    agent_ping = await interaction.guild.fetch_role(os.getenv("DEV_ROLE"))
-                except:
-                    agent_ping = None
-
+        if agent_ping is None:
+            try:
+                agent_ping = await interaction.guild.fetch_role(os.getenv("MOD_ROLE"))
+            except:
+                pass
+    
         if agent_ping is not None:
             mod_mention = f"<@&{agent_ping.id}>"
             
@@ -224,7 +171,7 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket"):
         )
         
         
-        await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}")
+        await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}", delete_after=10)
 
         
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
