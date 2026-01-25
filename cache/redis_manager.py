@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import Optional
 from datetime import datetime
 from redis import Redis
@@ -12,10 +13,11 @@ redis_client : Optional[Redis] = None
 output_scan_proccess = False
 console = Console()
 
+
 async def connect_redis(client : MiBotClient):
     global redis_client
 
-    redis_client = Redis('localhost', 6379, decode_responses=True)
+    redis_client = Redis(host=os.getenv("REDIS_IP"), port=6379, decode_responses=True, password=os.getenv("REDIS_PWRD"))
 
     status = redis_client.ping()  # Test connection
 
