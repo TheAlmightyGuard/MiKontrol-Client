@@ -6,7 +6,6 @@ from models.tickets import TicketModalTemplate, TicketModalSelectOption
 
 from services.ticket_services import ticket_create, ticket_assign
 from utils.get_fetch import get_channel, get_role
-
 class TicketModalView(discord.ui.View):
     def __init__(self, modal = None):
         self.modal = modal
@@ -140,7 +139,7 @@ class TicketModal(discord.ui.Modal):
             )
             
             embed = discord.Embed(
-                title="A Moderator Ticket has appeared!",
+                title=f"A {self.template.title} Ticket has appeared!",
                 color=discord.Color.from_str("#ff6b00")
             )
             embed.set_footer(
@@ -155,13 +154,44 @@ class TicketModal(discord.ui.Modal):
             embed.add_field(
                 name="Report Date:",
                 value=f"<t:{round(datetime.now().timestamp())}:f>",
-                inline=False
+                inline=True
             )
+
+            for field in self.children:
+                assert isinstance(field, discord.ui.Label)
+                
+                title=field.text
+                value = ""
+                if isinstance(field.component, discord.ui.TextInput):
+                    value=field.component.value
+                else:
+                    if isinstance(field.component, (discord.ui.Select)):
+                        value=field.component.values[0]
+                    elif isinstance(field.component, (discord.ui.RoleSelect)):
+                        value=f"<@&{field.component.values[0].id}>"
+                    elif isinstance(field.component, (discord.ui.UserSelect)):
+                        value=f"<@{field.component.values[0].id}>"
+
+                embed.add_field(
+                    name=title,
+                    value=value,
+                    inline=False
+                )
 
             await text_channel.send(embed=embed)
             await text_channel.send( agent_ping + f" <@{interaction.user.id}>" )
 
             self.stop()
-        
+
+            await ticket_create(
+                ticket_id=self.id,
+                author_id=interaction.user.id,
+                ticket_channel=text_channel.id,
+                ticket_category=text_channel.category_id
+            )
+            
+            await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}", delete_after=10, ephemeral=True)
+        else:
+            await interaction.response.send_message("Your ticket could not be created due to error... Try again later", delete_after=10, ephemeral=True)
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await interaction.response.send_message(f'Oops! Something went wrong. {error}', ephemeral=True)
