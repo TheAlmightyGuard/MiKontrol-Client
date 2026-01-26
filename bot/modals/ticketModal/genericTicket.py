@@ -1,16 +1,13 @@
 from typing import List
 import discord
-from datetime import datetime
 
 from bot.modals.ticketModal.samples.moderation import ModerationModal
 from bot.modals.ticketModal.samples.developer import DeveloperModal
 
-from models.tickets import TicketModalTemplate, TicketModalField, TicketModalSelectOption
+from models.tickets import TicketModalTemplate
 from models.guild import GuildPreferences
 
 from bot.modals.ticketModal.template.ticketTemplate import TicketModal
-
-from services.guild_services import grab_guild_config
 
 class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
 
@@ -66,7 +63,9 @@ class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
             for custom in self.config.custom_tickets:
                 if custom.title == target:
                     modal = TicketModal(
-                        template=custom
+                        template=custom,
+                        agent_id=custom.agent_id,
+                        category_id=self.config.ticket_category
                     )
 
         if modal is None:

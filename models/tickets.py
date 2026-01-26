@@ -41,5 +41,6 @@ class TicketModalField(BaseModelConfig):
 class TicketModalTemplate(BaseModelConfig):
     title: str
     description: str
+    agent_id: int # Agent ID is just the role ID for the role to ping
     fields : list[TicketModalField]
 

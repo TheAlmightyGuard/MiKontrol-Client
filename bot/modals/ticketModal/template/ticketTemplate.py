@@ -5,7 +5,7 @@ from datetime import datetime
 from models.tickets import TicketModalTemplate, TicketModalSelectOption
 
 from services.ticket_services import ticket_create, ticket_assign
-
+from utils.get_fetch import get_channel, get_role
 
 class TicketModalView(discord.ui.View):
     def __init__(self, modal = None):
@@ -69,9 +69,11 @@ class TicketModalView(discord.ui.View):
 
 class TicketModal(discord.ui.Modal):
 
-    def __init__(self, template : TicketModalTemplate):
+    def __init__(self, template : TicketModalTemplate, agent_id : int, category_id : int):
         super().__init__(title=template.title)
         self.template = template
+        self.agent_id = agent_id
+        self.category_id = category_id
 
         for field in self.template.fields:
             item = getattr(discord.ui, field.component)
@@ -125,7 +127,41 @@ class TicketModal(discord.ui.Modal):
             self.add_item(component)
 
     async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.send_message("heh")
+
+        category = await get_channel(interaction.guild, self.category_id)
+        agent_ping = await get_role(interaction.guild, self.agent_id)
+
+        if agent_ping is not None:
+            agent_ping = f"<@&{agent_ping.id}>"
+            text_channel = await interaction.guild.create_text_channel(
+                name=self.id,
+                reason=f"Ticket creation by: {interaction.user.name}",
+                category=category
+            )
+            
+            embed = discord.Embed(
+                title="A Moderator Ticket has appeared!",
+                color=discord.Color.from_str("#ff6b00")
+            )
+            embed.set_footer(
+                text="Powered by MiKontrol"
+            )
+
+            embed.add_field(
+                name="Reporter",
+                value=f"{interaction.user.mention}",
+                inline=True
+            )
+            embed.add_field(
+                name="Report Date:",
+                value=f"<t:{round(datetime.now().timestamp())}:f>",
+                inline=False
+            )
+
+            await text_channel.send(embed=embed)
+            await text_channel.send( agent_ping + f" <@{interaction.user.id}>" )
+
+            self.stop()
         
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await interaction.response.send_message(f'Oops! Something went wrong. {error}', ephemeral=True)
