@@ -1,16 +1,13 @@
-from models.guild import Guild
+from models.guild import Guild, GuildPreferences
 from repositories.guild_repo import guild_create, get_guild, get_guild_preferences
 
 async def guild_join(
     serverId: int,
-    prefix: str = "!",
     locale: str = "en-US",
     premiumLevel: int = 0
 ):
-
     guild = Guild(
         serverId=serverId,
-        prefix=prefix,
         locale=locale,
         premiumLevel=premiumLevel
     )
@@ -26,5 +23,5 @@ async def grab_guild(
 
 async def grab_guild_config(
     serverId: int
-):
+) -> GuildPreferences:
     return await get_guild_preferences(serverId)

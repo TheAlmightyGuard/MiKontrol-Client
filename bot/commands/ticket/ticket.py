@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 
 from bot.modals.ticketModal.genericTicket import GeneralModal
 from services.ticket_services import ticket_close
+from services.guild_services import grab_guild_config
 
 class Ticket(commands.Cog):
     def __init__(self, client : MiBotClient):
@@ -42,7 +43,10 @@ class Ticket(commands.Cog):
     async def ticket(self, ctx : commands.Context):
 
         if ctx.interaction:
-            modal = GeneralModal()
+
+            config = await grab_guild_config(ctx.guild.id)
+            
+            modal = GeneralModal(config)
 
             modal.id = str(uuid.uuid7())
 

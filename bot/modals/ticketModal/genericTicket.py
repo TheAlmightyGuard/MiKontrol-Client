@@ -1,34 +1,73 @@
+from typing import List
 import discord
 from datetime import datetime
 
 from bot.modals.ticketModal.samples.moderation import ModerationModal
+from bot.modals.ticketModal.samples.developer import DeveloperModal
+
+from models.tickets import TicketModalTemplate, TicketModalField, TicketModalSelectOption
+from models.guild import GuildPreferences
+
+from bot.modals.ticketModal.template.ticketTemplate import TicketModal
+
+from services.guild_services import grab_guild_config
 
 class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
 
-    type = discord.ui.Label(
-        text='Report Type',
-        description='Select the type of the report.',
-        component=discord.ui.Select(
-            placeholder='Choose a type...',
-            options=[
-                discord.SelectOption(label='Moderation', description='Report will be directed to Moderation Team'),
-                discord.SelectOption(label='Development', description='Report will be directed to Developer Team Support')
-            ],
-        ),
-    )
+    def __init__(self, guildConfig : GuildPreferences):
+        super().__init__()
+        self.config = guildConfig
+
+        options : List[discord.SelectOption] = []
+        options.append(discord.SelectOption(label='Moderation', description='Report will be directed to Moderation Team'))
+        options.append(discord.SelectOption(label='Development', description='Report will be directed to Developer Team Support'))
+
+        for modal in guildConfig.custom_tickets:
+            if isinstance(modal, TicketModalTemplate):
+
+                option = discord.SelectOption(
+                    label=modal.title,
+                    description=modal.description,
+                    value=modal.title
+                )
+
+                options.append(option)
+
+
+        self.add_item(
+            discord.ui.Label(
+                text='Report Type',
+                description='Select the type of the report.',
+                component=discord.ui.Select(
+                    placeholder='Choose a type...',
+                    options=options
+                ),
+            )
+        )
+
+    
 
     async def on_submit(self, interaction: discord.Interaction):
 
         # Standard check for your select menu
-        assert isinstance(self.type.component, discord.ui.Select)
-        target = self.type.component.values[0]
+        label = self.children[0]
+        assert isinstance(label, discord.ui.Label)
+        assert isinstance(label.component, discord.ui.Select)
+
+        target = label.component.values[0]
 
         modal = None
 
         if target == "Moderation":
             modal = ModerationModal()
-        elif target == "Developer":
-            modal = None
+        elif target == "Development":
+            modal = DeveloperModal()
+        else:
+            for custom in self.config.custom_tickets:
+                if custom.title == target:
+                    modal = TicketModal(
+                        template=custom
+                    )
 
         if modal is None:
             raise Exception
@@ -40,7 +79,7 @@ class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
         )
 
         embed.add_field(
-            name="You have selected to open a Moderation Ticket...",
+            name=f"You have selected to open a {target} Ticket...",
             value="Click to continue or cancel ticket."
         )
 
@@ -55,7 +94,6 @@ class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
 
         async def continue_callback(interaction: discord.Interaction):
             await interaction.response.send_modal(modal)
-            await interaction.message.delete()
 
         continue_btn.callback = continue_callback
 
@@ -65,7 +103,8 @@ class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
         )
 
         async def exit_callback(interaction: discord.Interaction):
-            await interaction.message.delete()
+            await interaction.response.defer()
+            await interaction.delete_original_response()
             return
 
         exit_btn.callback = exit_callback

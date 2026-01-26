@@ -5,7 +5,7 @@ from services.ticket_services import ticket_create, ticket_assign
 
 
 
-class ModerationModalView(discord.ui.View):
+class DeveloperModalView(discord.ui.View):
     def __init__(self, modal = None):
         self.modal = modal
         self.error = None
@@ -65,15 +65,25 @@ class ModerationModalView(discord.ui.View):
         )
 
 
-class ModerationModal(discord.ui.Modal, title="Open a ticket [ Developer ]"):
+class DeveloperModal(discord.ui.Modal, title="Open a ticket [ Developer ]"):
 
+    subject = discord.ui.Label(
+        text='Ticket Subject',
+        description='Enter the title of the ticket',
+        component=discord.ui.TextInput(
+            placeholder="Function error",
+            required=True,
+            style=discord.TextStyle.short
+        ),
+    )
     
     issue = discord.ui.Label(
-        text='Issue Descriptionb',
+        text='Issue Description',
         description='Enter the description of your issue',
         component=discord.ui.TextInput(
             placeholder="A function wasn't working! ;o",
-            required=True
+            required=True,
+            style=discord.TextStyle.paragraph
         ),
     )
 
@@ -81,21 +91,21 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Developer ]"):
         text='Evidence',
         description='Enter your evidence such as error logs or video evidence',
         component=discord.ui.TextInput(
-            placeholder="Enter evidence(s) link here"
+            placeholder="Enter evidence(s) link here",
+            required=True
         )
     )
 
     async def on_submit(self, interaction: discord.Interaction):
 
-        buttons = ModerationModalView(self)
+        buttons = DeveloperModalView(self)
 
-        assert isinstance(self.environment.component, discord.ui.Select)
-        assert isinstance(self.violation.component, discord.ui.Select)
+        assert isinstance(self.subject.component, discord.ui.TextInput)
+        assert isinstance(self.issue.component, discord.ui.TextInput)
         assert isinstance(self.evidence.component, discord.ui.TextInput)
-        assert isinstance(self.violator.component, discord.ui.UserSelect)
 
         category = interaction.guild.get_channel(os.getenv("TICKET_CATEGORY"))
-        agent_ping = interaction.guild.get_role(os.getenv("MOD_ROLE"))
+        agent_ping = interaction.guild.get_role(os.getenv("DEV_ROLE"))
 
         if category is None:
             try:
@@ -103,14 +113,14 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Developer ]"):
             except Exception as e:
                 category = None
 
-        if agent_ping is None:
-            try:
-                agent_ping = await interaction.guild.fetch_role(os.getenv("MOD_ROLE"))
-            except:
-                pass
+        # if agent_ping is None:
+        #     try:
+        #         agent_ping = await interaction.guild.fetch_role(os.getenv("MOD_ROLE"))
+        #     except:
+        #         pass
     
-        if agent_ping is not None:
-            mod_mention = f"<@&{agent_ping.id}>"
+        # if agent_ping is not None:
+        #     mod_mention = f"<@&{agent_ping.id}>"
             
 
         text_channel = await interaction.guild.create_text_channel(
@@ -133,23 +143,8 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Developer ]"):
             inline=True
         )
         embed.add_field(
-            name="Offender",
-            value=f"{self.violator.component.values[0].mention}",
-            inline=True
-        )
-        embed.add_field(
             name="Report Date:",
             value=f"<t:{round(datetime.now().timestamp())}:f>",
-            inline=False
-        )
-        embed.add_field(
-            name="Report Environment",
-            value=f"{self.environment.component.values[0]}",
-            inline=False
-        )
-        embed.add_field(
-            name="Report Type",
-            value=f"{self.violation.component.values[0]}",
             inline=False
         )
         embed.add_field(
@@ -159,7 +154,7 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Developer ]"):
         )
 
         await text_channel.send(embed=embed, view=buttons)
-        self.msg = await text_channel.send( mod_mention + f" <@{interaction.user.id}>" )
+        self.msg = await text_channel.send( agent_ping + f" <@{interaction.user.id}>" )
 
         self.stop()
 

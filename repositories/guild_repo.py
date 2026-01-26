@@ -65,7 +65,7 @@ async def guild_create(src: Guild) -> bool:
 
     if collection is None:
         raise ValueError("Collection 'guilds' does not exist.")
-    
+
     insert = await collection.update_one(
         {'serverId' : src.serverId},
         {'$setOnInsert': src.model_dump()},

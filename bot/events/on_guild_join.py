@@ -9,12 +9,14 @@ class MiGuildJoin(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild : discord.Guild):
+
         await guild_join(
             serverId=guild.id,
-            prefix="!",
             locale=guild.preferred_locale.language_code,
             premiumLevel=guild.premium_tier
         )
+
+
 
         # Below this will initiate the welcome system
 

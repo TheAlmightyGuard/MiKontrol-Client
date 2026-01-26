@@ -1,5 +1,6 @@
 from typing import Optional
 from models.base import BaseModelConfig, MiBaseModel
+from models.tickets import TicketModalTemplate
 
 class Guild(MiBaseModel):
     serverId: int
@@ -16,3 +17,6 @@ class GuildPreferences(MiBaseModel):
     # Moderation
     prefix: str = "!"
     mutedRole: Optional[int] = None
+
+    # Tickets
+    custom_tickets: Optional[list[TicketModalTemplate]] = None
