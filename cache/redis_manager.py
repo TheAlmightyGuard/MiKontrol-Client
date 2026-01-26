@@ -17,7 +17,7 @@ console = Console()
 async def connect_redis(client : MiBotClient):
     global redis_client
 
-    redis_client = Redis(host=os.getenv("REDIS_IP"), port=6379, decode_responses=True, password=os.getenv("REDIS_PWRD"))
+    redis_client = Redis(host=os.getenv("REDIS_IP"), port=6379, decode_responses=True, password=os.getenv("REDIS_PWRD") if os.getenv("REDIS_PWRD") != "None" else None)
 
     status = redis_client.ping()  # Test connection
 

@@ -32,8 +32,8 @@ class TicketModalSelectOption(BaseModelConfig):
 class TicketModalField(BaseModelConfig):
     title: str
     description: Optional[str] = None
-    component : Literal["TextInput", "UserSelect", "RoleSelect", "ChannelSelect", "Select"] = ""
-    textStyle: Literal["short", "paragraph", "long"] = "short"
+    component : Literal["TextInput", "UserSelect", "RoleSelect", "ChannelSelect", "Select"]
+    textStyle: Literal["short", "paragraph", "long"]
     max_length : Optional[int] = None
     selectOptions : Optional[list[TicketModalSelectOption]] = None
     required: bool

@@ -45,7 +45,7 @@ class Ticket(commands.Cog):
         if ctx.interaction:
 
             config = await grab_guild_config(ctx.guild.id)
-            
+
             modal = GeneralModal(config)
 
             modal.id = str(uuid.uuid7())

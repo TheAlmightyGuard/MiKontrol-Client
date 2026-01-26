@@ -19,5 +19,5 @@ class GuildPreferences(MiBaseModel):
     mutedRole: Optional[int] = None
 
     # Tickets
-    ticket_category : Optional[str] = 0
+    ticket_category : Optional[int] = 0
     custom_tickets: Optional[list[TicketModalTemplate]] = None

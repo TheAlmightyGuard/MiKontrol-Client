@@ -30,7 +30,6 @@ class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
 
                 options.append(option)
 
-
         self.add_item(
             discord.ui.Label(
                 text='Report Type',

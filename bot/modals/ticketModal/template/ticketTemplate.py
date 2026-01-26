@@ -70,7 +70,7 @@ class TicketModalView(discord.ui.View):
 class TicketModal(discord.ui.Modal):
 
     def __init__(self, template : TicketModalTemplate, agent_id : int, category_id : int):
-        super().__init__(title=template.title)
+        super().__init__(title=f"Open a Ticket [ {template.title} ]")
         self.template = template
         self.agent_id = agent_id
         self.category_id = category_id
