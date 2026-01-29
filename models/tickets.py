@@ -3,12 +3,16 @@ from models.base import MiBaseModel, BaseModelConfig
 from typing import Optional, Literal
 
 class TicketEntry(MiBaseModel):
+    guild_id: int
     ticket_id: str
     author_id: int
     assigned_staff: Optional[int] = None
     ticket_channel_id: int
     ticket_category_id: Optional[int] = None
     
+    # Data
+    ticket_type: str
+
     # State
     priority: Literal["Low", "Medium", "High"] = "Low"
     status: Literal[
@@ -22,6 +26,12 @@ class TicketEntry(MiBaseModel):
     closed_at : Optional[datetime] = None
     closed_by : Optional[int] = None
     closed_reason : Optional[str] = None
+
+
+class TicketModalEmbedView(BaseModelConfig):
+    style : Literal["primary", "grey"]
+    label : str
+    custom_id : Optional[str]
 
 
 class TicketModalSelectOption(BaseModelConfig):

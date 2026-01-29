@@ -6,17 +6,20 @@ from models.tickets import TicketModalTemplate, TicketModalSelectOption
 
 from services.ticket_services import ticket_create, ticket_assign
 from utils.get_fetch import get_channel, get_role
+
+
 class TicketModalView(discord.ui.View):
-    def __init__(self, modal = None):
+    def __init__(self, modal = None, template : TicketModalTemplate = None):
         self.modal = modal
+        self.template = template
         self.error = None
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="💼 Take the case", style=discord.ButtonStyle.grey, custom_id="persistent:mod_button")
+    @discord.ui.button(label="💼 Take the case", style=discord.ButtonStyle.grey)
     async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        modId = int(os.getenv("MOD_ROLE"))
-        if not (interaction.user.get_role(modId) or interaction.user.guild_permissions.kick_members):
+        agentId = self.template.agent_id
+        if not (interaction.user.get_role(agentId) or interaction.user.guild_permissions.kick_members):
             await interaction.response.send_message(
                 content="You don't have permissions to accept tickets!",
                 ephemeral=True,
@@ -50,13 +53,13 @@ class TicketModalView(discord.ui.View):
 
         
         embed.add_field(
-            name="Assigned Moderator:",
+            name="Assigned Agent:",
             value=f"{interaction.user.mention}",
             inline=False
         )
 
         button.disabled = True
-        button.label = "Taken by Moderator"
+        button.label = f"Taken by {interaction.user.name}"
 
         await ticket_assign(self.modal.id, interaction.user.id)
 
@@ -127,6 +130,8 @@ class TicketModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
 
+        button = TicketModalView(self, self.template)
+
         category = await get_channel(interaction.guild, self.category_id)
         agent_ping = await get_role(interaction.guild, self.agent_id)
 
@@ -152,7 +157,7 @@ class TicketModal(discord.ui.Modal):
                 inline=True
             )
             embed.add_field(
-                name="Report Date:",
+                name="Report Date",
                 value=f"<t:{round(datetime.now().timestamp())}:f>",
                 inline=True
             )
@@ -178,12 +183,14 @@ class TicketModal(discord.ui.Modal):
                     inline=False
                 )
 
-            await text_channel.send(embed=embed)
+            await text_channel.send(embed=embed, view=button)
             await text_channel.send( agent_ping + f" <@{interaction.user.id}>" )
 
             self.stop()
 
             await ticket_create(
+                guild_id=interaction.guild_id,
+                ticket_type=self.template.title,
                 ticket_id=self.id,
                 author_id=interaction.user.id,
                 ticket_channel=text_channel.id,

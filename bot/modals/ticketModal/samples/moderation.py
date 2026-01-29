@@ -2,8 +2,7 @@ import discord, os
 from datetime import datetime
 
 from services.ticket_services import ticket_create, ticket_assign
-
-
+from utils.get_fetch import get_channel, get_role
 
 class ModerationModalView(discord.ui.View):
     def __init__(self, modal = None):
@@ -14,8 +13,8 @@ class ModerationModalView(discord.ui.View):
     @discord.ui.button(label="💼 Take the case", style=discord.ButtonStyle.grey, custom_id="persistent:mod_button")
     async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        modId = int(os.getenv("MOD_ROLE"))
-        if not (interaction.user.get_role(modId) or interaction.user.guild_permissions.kick_members):
+        agentId = int(os.getenv("MOD_ROLE"))
+        if not (interaction.user.get_role(agentId) or interaction.user.guild_permissions.kick_members):
             await interaction.response.send_message(
                 content="You don't have permissions to accept tickets!",
                 ephemeral=True,
@@ -49,13 +48,13 @@ class ModerationModalView(discord.ui.View):
 
         
         embed.add_field(
-            name="Assigned Moderator:",
+            name="Assigned Agent:",
             value=f"{interaction.user.mention}",
             inline=False
         )
 
         button.disabled = True
-        button.label = "Taken by Moderator"
+        button.label = f"Taken by {interaction.user.name}"
 
         await ticket_assign(self.modal.id, interaction.user.id)
 
@@ -121,24 +120,11 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
         assert isinstance(self.evidence.component, discord.ui.TextInput)
         assert isinstance(self.violator.component, discord.ui.UserSelect)
 
-        category = interaction.guild.get_channel(os.getenv("TICKET_CATEGORY"))
-        agent_ping = interaction.guild.get_role(os.getenv("MOD_ROLE"))
+        category = await get_channel(interaction.guild, os.getenv("TICKET_CATEGORY"))
+        agent_ping = await get_role(interaction.guild, os.getenv("MOD_ROLE"))
 
-        if category is None:
-            try:
-                category = await interaction.guild.fetch_channel(os.getenv("TICKET_CATEGORY"))
-            except Exception as e:
-                category = None
-
-        if agent_ping is None:
-            try:
-                agent_ping = await interaction.guild.fetch_role(os.getenv("MOD_ROLE"))
-            except:
-                pass
-    
         if agent_ping is not None:
-            mod_mention = f"<@&{agent_ping.id}>"
-            
+            agent_ping = f"<@&{agent_ping.id}>"
 
         text_channel = await interaction.guild.create_text_channel(
             name=self.id,
@@ -165,7 +151,7 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
             inline=True
         )
         embed.add_field(
-            name="Report Date:",
+            name="Report Date",
             value=f"<t:{round(datetime.now().timestamp())}:f>",
             inline=False
         )
@@ -186,11 +172,13 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
         )
 
         await text_channel.send(embed=embed, view=buttons)
-        self.msg = await text_channel.send( mod_mention + f" <@{interaction.user.id}>" )
+        self.msg = await text_channel.send( agent_ping + f" <@{interaction.user.id}>" )
 
         self.stop()
 
         await ticket_create(
+            guild_id=interaction.guild_id,
+            ticket_type="Moderation",
             ticket_id=self.id,
             author_id=interaction.user.id,
             ticket_channel=text_channel.id,
@@ -198,7 +186,7 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
         )
         
         
-        await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}", delete_after=10)
+        await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}", delete_after=10, ephemeral=True)
 
         
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:

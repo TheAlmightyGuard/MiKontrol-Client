@@ -35,6 +35,29 @@ async def get_guild_preferences(serverId: int) -> GuildPreferences:
     guild.pop("_id", None)
     return GuildPreferences(**guild)
 
+async def get_all_guild_settings() -> list[GuildPreferences]:
+
+    db = get_db()
+
+    collection = db.get_collection("guild_settings")
+
+    if collection is None:
+        raise ValueError("Collection 'guild_settings' does not exist.")
+    
+    guild_settings : list[GuildPreferences] = []
+
+    async with collection.find(
+        {}
+    ) as cursor:
+        async for document in cursor:
+            document.pop("_id", None)
+            guild_settings.append(GuildPreferences(**document))        
+
+    if len(guild_settings) == 0:
+        return None
+    else:
+        return guild_settings
+
 async def guild_create_config(serverId: int) -> GuildPreferences:
 
     db = get_db()

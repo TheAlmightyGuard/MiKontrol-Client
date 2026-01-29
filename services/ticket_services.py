@@ -3,12 +3,16 @@ from repositories.ticket_repo import post_ticket, assign_ticket, close_ticket
 
 async def ticket_create(
     ticket_id: str,
+    ticket_type: str,
+    guild_id: int,
     author_id: int,
     ticket_channel: int,
     ticket_category: int
 ) -> bool:
     
     entry = TicketEntry(
+        guild_id=guild_id,
+        ticket_type=ticket_type,
         ticket_id=ticket_id,
         author_id=author_id,
         assigned_staff=None,

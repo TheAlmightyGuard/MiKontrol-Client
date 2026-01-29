@@ -80,3 +80,27 @@ async def close_ticket(ticket_id: str, interaction_user : int | None, reason : s
             archive.model_dump()
         )
     return result is not None
+
+
+async def get_all_tickets() -> list[TicketEntry] | None:
+    db = get_db()
+
+    collection = db.get_collection("tickets")
+
+    if collection is None:
+        console.log("Error. Collection 'tickets' not found!")
+        return
+
+    tickets : list[TicketEntry] = []
+
+    async with collection.find(
+        {}
+    ) as cursor:
+        async for document in cursor:
+            document.pop("_id", None)
+            tickets.append(TicketEntry(**document))        
+
+    if len(tickets) == 0:
+        return None
+    else:
+        return tickets
