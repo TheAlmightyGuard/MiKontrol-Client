@@ -7,6 +7,7 @@ from models.tickets import TicketModalTemplate, TicketModalSelectOption
 from services.ticket_services import ticket_create, ticket_pull, ticket_close, ticket_assign
 from utils.get_fetch import get_channel, get_role
 
+import asyncio
 class TicketModalView(discord.ui.View):
     def __init__(self, modal = None, template : TicketModalTemplate = None):
         self.modal = modal
@@ -67,7 +68,7 @@ class TicketModalView(discord.ui.View):
             view=self
         )
 
-    @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.red)
+    @discord.ui.button(label="🎟️ Close Ticket", style=discord.ButtonStyle.red)
     async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
         channel = interaction.channel
 
@@ -75,18 +76,28 @@ class TicketModalView(discord.ui.View):
             return
         
         agent = await ticket_pull(channel.name)
+        authorized = False
 
-        if agent is None:
-            await interaction.response.send_message("No agent assigned, cannot close.", delete_after=5, ephemeral=True)
-            return
+        if agent == 0:
+            if interaction.user.guild_permissions.administrator:
+                authorized = True
+            else:
+                await interaction.response.send_message("You do not have permission to close unclaimed tickets!")
+                return
+        else:
+            if agent == interaction.user.id:
+                authorized = True
+            else:
+                await interaction.response.send_message("Unauthorized action. You are not the agent of this ticket.", delete_after=5, ephemeral=True)
+                return
 
-        if int(agent) != interaction.user.id:
-            await interaction.response.send_message("Unauthorized action. You are not the agent of this ticket.", delete_after=5, ephemeral=True)
-            return
 
+        if authorized:
+            await ticket_close(channel.name, interaction.user.id, f"Agent {interaction.user.name} ({interaction.user.id}) has closed the ticket.")
+            await interaction.response.send_message(f"Agent {interaction.user.name} ({interaction.user.id}) has closed the ticket. Closing in 5 seconds...", delete_after=5, ephemeral=True)
+            await asyncio.sleep(5)
+            await interaction.channel.delete(reason=f"Agent {interaction.user.name} ({interaction.user.id}) has closed the ticket.")
 
-        await ticket_close(channel.name, interaction.user.id, f"Agent ({agent}) has closed the ticket.")
-        await interaction.response.send_message(f"Agent ({agent}) has closed the ticket. Closing in 5 seconds...", delete_after=5, ephemeral=True)
 
 class TicketModal(discord.ui.Modal):
 

@@ -66,13 +66,13 @@ async def ticket_close(
 
 async def ticket_pull(
     ticket_id: str
-) -> str | None:
+) -> int | None:
     
     redis_ok = get_agent(ticket_id)
 
     if redis_ok is not None:
-        return redis_ok
+        return int(redis_ok)
     
     ticket = await get_ticket(ticket_id)
 
-    return ticket.assigned_staff
+    return ticket.agent_user_id
