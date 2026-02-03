@@ -1,8 +1,8 @@
 from typing import List
 import discord
 
-from bot.modals.ticketModal.samples.moderation import ModerationModal
-from bot.modals.ticketModal.samples.developer import DeveloperModal
+from bot.modals.ticketModal.samples.modals.moderation import ModerationModal
+from bot.modals.ticketModal.samples.modals.developer import DeveloperModal
 
 from models.tickets import TicketModalTemplate
 from models.guild import GuildPreferences

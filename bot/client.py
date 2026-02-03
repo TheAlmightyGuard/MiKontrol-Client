@@ -7,7 +7,8 @@ from utils.cogs_functions import CogsStatus
 from models.internal import CogModel
 from rich.console import Console
 
-from bot.modals.ticketModal.samples.moderation import ModerationModalView
+# To change so all modals created that has buttons have synced in
+from bot.modals.ticketModal.samples.modals.moderation import ModerationModalView
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -63,4 +64,5 @@ class MiBotClient(commands.Bot):
 
 def create_client() -> MiBotClient:
     return MiBotClient()
+
     

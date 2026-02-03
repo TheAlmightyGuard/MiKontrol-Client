@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import datetime
 from redis import Redis
 from models.moderation import ModerationTask
-from bot.client import MiBotClient
+from models.tickets import TicketEntry
 from repositories.mod_repo import delete_task, get_redis_task, update_log
 
 from rich.console import Console
@@ -14,7 +14,11 @@ output_scan_proccess = False
 console = Console()
 
 
-async def connect_redis(client : MiBotClient):
+async def connect_redis(client):
+
+    from bot.client import MiBotClient
+    assert isinstance(client, MiBotClient)
+
     global redis_client
 
     redis_client = Redis(host=os.getenv("REDIS_IP"), port=6379, decode_responses=True, password=os.getenv("REDIS_PWRD") if os.getenv("REDIS_PWRD") != "None" else None)
@@ -27,7 +31,6 @@ async def connect_redis(client : MiBotClient):
 
     else:
         console.log("Failed to connect to Redis.")
-
 
 def add_task(src: ModerationTask) -> bool:
     
@@ -50,9 +53,12 @@ def remove_task(actionId: str) -> bool:
     else:
         return False
 
+async def mod_tasks(client):
 
-async def mod_tasks(client: MiBotClient):
+    from bot.client import MiBotClient
+    assert isinstance(client, MiBotClient)
 
+    
     console.log("Moderation Worker has been initialized")
     while not client.is_closed():
         
@@ -130,3 +136,52 @@ async def mod_tasks(client: MiBotClient):
 
         await asyncio.sleep(5)
 
+
+def add_agent(src: TicketEntry) -> bool:
+    
+    result = redis_client.hset(
+        "ticketAgent",
+        src.ticket_id,
+        str(src.assigned_staff) if src.assigned_staff is not None else "None"
+    )
+
+    if result:
+        return True
+    return False
+
+def set_agent(
+    ticket_id : str,
+    assigned_id : int   
+) -> bool:
+    
+    redis_client.hset(
+        "ticketAgent",
+        ticket_id,
+        assigned_id
+    )
+
+    return True
+
+def remove_agent(
+    ticket_id : str
+) -> bool:
+    
+    result = redis_client.hdel(
+        "ticketAgent",
+        ticket_id,
+    )
+
+    if result:
+        return True
+    return False
+
+def get_agent(
+    ticket_id : str
+) -> str | None:
+    
+    result = redis_client.hget(
+        "ticketAgent",
+        ticket_id,
+    )
+
+    return result

@@ -31,8 +31,8 @@ class TicketEntry(MiBaseModel):
 class TicketModalEmbedView(BaseModelConfig):
     style : Literal["primary", "grey"]
     label : str
-    custom_id : Optional[str]
-
+    custom_id : str
+    url : Optional[str]
 
 class TicketModalSelectOption(BaseModelConfig):
     title: str
@@ -53,4 +53,5 @@ class TicketModalTemplate(BaseModelConfig):
     description: str
     agent_id: int # Agent ID is just the role ID for the role to ping
     fields : list[TicketModalField]
+    embed_buttons : Optional[list[TicketModalEmbedView]]
 

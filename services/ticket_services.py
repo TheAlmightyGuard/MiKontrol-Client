@@ -1,5 +1,6 @@
 from models.tickets import TicketEntry
-from repositories.ticket_repo import post_ticket, assign_ticket, close_ticket
+from repositories.ticket_repo import post_ticket, assign_ticket, close_ticket, get_ticket
+from cache.redis_manager import add_agent, set_agent, remove_agent, get_agent
 
 async def ticket_create(
     ticket_id: str,
@@ -22,6 +23,11 @@ async def ticket_create(
         status="OPEN",
     )
 
+    redis_ok = add_agent(entry)
+
+    if not redis_ok:
+        return False
+
     return await post_ticket(entry)
 
 async def ticket_assign(
@@ -29,12 +35,15 @@ async def ticket_assign(
     assigned_id : int   
 ) -> bool:
     
-    await assign_ticket(
+    redis_ok = set_agent(ticket_id, assigned_id)
+
+    if not redis_ok:
+        return False
+    
+    return await assign_ticket(
         ticket_id=ticket_id,
         assigned_id=assigned_id
     )
-
-    return
 
 async def ticket_close(
     ticket_id: str,
@@ -42,8 +51,26 @@ async def ticket_close(
     reason : str
 ) -> bool:
     
+    redis_ok = remove_agent(ticket_id)
+
+    if not redis_ok:
+        return False
+    
     return await close_ticket(
         ticket_id=ticket_id,
         interaction_user=interaction_user,
         reason=reason
     )
+
+async def ticket_pull(
+    ticket_id: str
+) -> str | None:
+    
+    redis_ok = get_agent(ticket_id)
+
+    if redis_ok is not None:
+        return redis_ok
+    
+    ticket = await get_ticket(ticket_id)
+
+    return ticket.assigned_staff

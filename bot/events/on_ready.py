@@ -10,7 +10,6 @@ class MiReadyEvent(commands.Cog):
     async def on_ready(self):
         console.log('MiKontrol Bot Client is ready!')
 
-        console.log('Running SYNC on ticket channels...')
         await sync_ticket_channels(self.client)
 
         console.log("Ticket Channels SYNCED!")

@@ -4,7 +4,7 @@ from repositories.mod_repo import post_mute, post_ban
 from repositories.ticket_repo import get_all_tickets
 from repositories.guild_repo import get_all_guild_settings
 from utils.get_fetch import get_guild, get_channel
-from cache.redis_manager import add_task
+from cache.redis_manager import add_task, add_agent
 from discord.ext.commands import Bot
 
 from rich.console import Console
@@ -19,8 +19,6 @@ async def create_mute_task(task: ModerationTask):
             return
         
     await post_mute(task)
-    
-    
 
 async def create_ban_task(task: ModerationTask):
 
@@ -29,7 +27,6 @@ async def create_ban_task(task: ModerationTask):
         if not redis_ok:
             return
         await post_ban(task)
-
 
 async def sync_ticket_channels(client : Bot) -> bool:
 

@@ -1,12 +1,11 @@
 from typing import List
-import discord, os
+import discord
 from datetime import datetime
 
 from models.tickets import TicketModalTemplate, TicketModalSelectOption
 
-from services.ticket_services import ticket_create, ticket_assign
+from services.ticket_services import ticket_create, ticket_pull, ticket_close, ticket_assign
 from utils.get_fetch import get_channel, get_role
-
 
 class TicketModalView(discord.ui.View):
     def __init__(self, modal = None, template : TicketModalTemplate = None):
@@ -68,6 +67,26 @@ class TicketModalView(discord.ui.View):
             view=self
         )
 
+    @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.red)
+    async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        channel = interaction.channel
+
+        if channel is None:
+            return
+        
+        agent = await ticket_pull(channel.name)
+
+        if agent is None:
+            await interaction.response.send_message("No agent assigned, cannot close.", delete_after=5, ephemeral=True)
+            return
+
+        if int(agent) != interaction.user.id:
+            await interaction.response.send_message("Unauthorized action. You are not the agent of this ticket.", delete_after=5, ephemeral=True)
+            return
+
+
+        await ticket_close(channel.name, interaction.user.id, f"Agent ({agent}) has closed the ticket.")
+        await interaction.response.send_message(f"Agent ({agent}) has closed the ticket. Closing in 5 seconds...", delete_after=5, ephemeral=True)
 
 class TicketModal(discord.ui.Modal):
 
