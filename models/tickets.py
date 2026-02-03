@@ -6,7 +6,8 @@ class TicketEntry(MiBaseModel):
     guild_id: int
     ticket_id: str
     author_id: int
-    assigned_staff: Optional[int] = None
+    agent_user_id: Optional[int] = None
+    agent_role_id: int
     ticket_channel_id: int
     ticket_category_id: Optional[int] = None
     

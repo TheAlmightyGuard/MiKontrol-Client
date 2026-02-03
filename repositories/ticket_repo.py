@@ -35,7 +35,7 @@ async def assign_ticket(ticket_id: str, assigned_id: int) -> None:
         },
         {
             "$set" : {
-                "assigned_staff": assigned_id,
+                "agent_user_id": assigned_id,
                 "status": "IN_PROGRESS",
                 "updatedAt": datetime.now()
             }

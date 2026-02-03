@@ -155,7 +155,6 @@ class TicketModal(discord.ui.Modal):
         agent_ping = await get_role(interaction.guild, self.agent_id)
 
         if agent_ping is not None:
-            agent_ping = f"<@&{agent_ping.id}>"
             text_channel = await interaction.guild.create_text_channel(
                 name=self.id,
                 reason=f"Ticket creation by: {interaction.user.name}",
@@ -203,7 +202,7 @@ class TicketModal(discord.ui.Modal):
                 )
 
             await text_channel.send(embed=embed, view=button)
-            await text_channel.send( agent_ping + f" <@{interaction.user.id}>" )
+            await text_channel.send( f"<@&{agent_ping.id}>" + f" <@{interaction.user.id}>" )
 
             self.stop()
 
@@ -213,7 +212,8 @@ class TicketModal(discord.ui.Modal):
                 ticket_id=self.id,
                 author_id=interaction.user.id,
                 ticket_channel=text_channel.id,
-                ticket_category=text_channel.category_id
+                ticket_category=text_channel.category_id,
+                agent_role_id=agent_ping.id
             )
             
             await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}", delete_after=10, ephemeral=True)

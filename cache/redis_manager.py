@@ -142,7 +142,7 @@ def add_agent(src: TicketEntry) -> bool:
     result = redis_client.hset(
         "ticketAgent",
         src.ticket_id,
-        str(src.assigned_staff) if src.assigned_staff is not None else "None"
+        str(src.agent_role_id)
     )
 
     if result:

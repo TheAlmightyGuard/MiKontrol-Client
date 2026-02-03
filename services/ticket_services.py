@@ -8,7 +8,8 @@ async def ticket_create(
     guild_id: int,
     author_id: int,
     ticket_channel: int,
-    ticket_category: int
+    ticket_category: int,
+    agent_role_id: int
 ) -> bool:
     
     entry = TicketEntry(
@@ -16,7 +17,8 @@ async def ticket_create(
         ticket_type=ticket_type,
         ticket_id=ticket_id,
         author_id=author_id,
-        assigned_staff=None,
+        agent_user_id=None,
+        agent_role_id=agent_role_id,
         ticket_channel_id=ticket_channel,
         ticket_category_id=ticket_category,
         priority="Low",
