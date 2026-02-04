@@ -7,7 +7,7 @@ from bot.client import MiBotClient
 from typing import Optional
 from models.internal import CogModel
 
-from utils.parse_time import add_time
+from utils.time_functions import add_time
 from services.moderation_services import add_mute, remove_mute
 from services.guild_services import get_guild_preferences
 

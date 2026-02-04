@@ -6,6 +6,7 @@ from models.tickets import TicketModalTemplate, TicketModalSelectOption
 
 from services.ticket_services import ticket_create, ticket_pull, ticket_close, ticket_assign
 from utils.get_fetch import get_channel, get_role
+from utils.time_functions import add_time
 
 import asyncio
 class TicketModalView(discord.ui.View):
@@ -15,7 +16,7 @@ class TicketModalView(discord.ui.View):
         self.error = None
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="💼 Take the case", style=discord.ButtonStyle.grey)
+    @discord.ui.button(label="💼 Take the case", style=discord.ButtonStyle.grey, custom_id="req:case_accept")
     async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         agentId = self.template.agent_id
@@ -68,7 +69,7 @@ class TicketModalView(discord.ui.View):
             view=self
         )
 
-    @discord.ui.button(label="🎟️ Close Ticket", style=discord.ButtonStyle.red)
+    @discord.ui.button(label="🎟️ Close Ticket", style=discord.ButtonStyle.red, custom_id="req:close_ticket")
     async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
         channel = interaction.channel
 
@@ -94,7 +95,7 @@ class TicketModalView(discord.ui.View):
 
         if authorized:
             await ticket_close(channel.name, interaction.user.id, f"Agent {interaction.user.name} ({interaction.user.id}) has closed the ticket.")
-            await interaction.response.send_message(f"Agent {interaction.user.name} ({interaction.user.id}) has closed the ticket. Closing in 5 seconds...", delete_after=5, ephemeral=True)
+            await interaction.response.send_message(f"Agent {interaction.user.name} ({interaction.user.id}) has closed this ticket. Closing <t:{round(add_time("5s", datetime.now()).timestamp())}:R>", delete_after=5, ephemeral=True)
             await asyncio.sleep(5)
             await interaction.channel.delete(reason=f"Agent {interaction.user.name} ({interaction.user.id}) has closed the ticket.")
 

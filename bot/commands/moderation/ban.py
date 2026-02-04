@@ -7,7 +7,7 @@ from bot.client import MiBotClient
 from models.internal import CogModel
 
 from typing import Optional
-from utils.parse_time import add_time
+from utils.time_functions import add_time
 from services.moderation_services import add_ban, remove_ban
 
 import uuid

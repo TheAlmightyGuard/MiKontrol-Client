@@ -9,6 +9,8 @@ from rich.console import Console
 
 # To change so all modals created that has buttons have synced in
 from bot.modals.ticketModal.samples.modals.moderation import ModerationModalView
+from bot.modals.ticketModal.samples.modals.developer import DeveloperModalView
+from bot.modals.ticketModal.template.ticketTemplate import TicketModalView
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -57,6 +59,8 @@ class MiBotClient(commands.Bot):
         self.cogStatus.cogs_status()
 
         self.add_view(view=ModerationModalView())
+        self.add_view(view=DeveloperModalView())
+        self.add_view(view=TicketModalView())
                 
     async def close(self):
         console.log("Shutting down bot...")
