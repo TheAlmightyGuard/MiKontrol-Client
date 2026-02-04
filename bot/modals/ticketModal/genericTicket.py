@@ -1,6 +1,8 @@
 from typing import List
 import discord
 
+from datetime import datetime
+
 from bot.modals.ticketModal.samples.modals.moderation import ModerationModal
 from bot.modals.ticketModal.samples.modals.developer import DeveloperModal
 
@@ -8,7 +10,7 @@ from models.tickets import TicketModalTemplate
 from models.guild import GuildPreferences
 
 from bot.modals.ticketModal.template.ticketTemplate import TicketModal
-
+from utils.time_functions import add_time
 class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
 
     def __init__(self, guildConfig : GuildPreferences):
@@ -74,6 +76,7 @@ class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
 
         embed = discord.Embed(
             title="Ticket System",
+            description=f"Auto-cancel <t:{round(add_time("10s", datetime.now()).timestamp())}:R>"
         )
 
         embed.add_field(
@@ -82,7 +85,7 @@ class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
         )
 
         embed.set_footer(
-            text="Auto-cancel in 10 seconds..."
+            text="Powered by MiKontrol"
         )
 
         continue_btn = discord.ui.Button(

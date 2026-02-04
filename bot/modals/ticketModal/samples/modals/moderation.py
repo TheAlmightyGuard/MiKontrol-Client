@@ -1,22 +1,23 @@
-import discord, os
+import discord, os, asyncio
 from datetime import datetime
 
-from services.ticket_services import ticket_create, ticket_assign
+from services.ticket_services import ticket_create, ticket_assign, ticket_close, ticket_pull
 from utils.get_fetch import get_channel, get_role
-
+from utils.time_functions import add_time
 class ModerationModalView(discord.ui.View):
-    def __init__(self, modal = None):
+    def __init__(self, modal = None, agent : discord.Role = None):
         self.modal = modal
+        self.role = agent
         self.error = None
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="💼 Take the case", style=discord.ButtonStyle.grey, custom_id="persistent:mod_button")
-    async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="💼 Take the case", style=discord.ButtonStyle.grey, custom_id="req:case_accept")
+    async def case_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        agentId = int(os.getenv("MOD_ROLE"))
+        agentId = self.role.id
         if not (interaction.user.get_role(agentId) or interaction.user.guild_permissions.kick_members):
             await interaction.response.send_message(
-                content="You don't have permissions to accept tickets!",
+                content=f"{interaction.user.mention} You don't have permissions to accept tickets!",
                 ephemeral=True,
                 delete_after=10
             )
@@ -40,7 +41,7 @@ class ModerationModalView(discord.ui.View):
         if (interaction.user.id == violatorId) or (interaction.user.id == reporterId):
 
             self.error = await interaction.response.send_message(
-                content="You cannot accept to moderate a ticket against you / you created yourself!",
+                content=f"{interaction.user.mention} You cannot accept to moderate a ticket against you / you created yourself!",
                 delete_after=10,
                 ephemeral=True
             )
@@ -63,6 +64,35 @@ class ModerationModalView(discord.ui.View):
             view=self
         )
 
+    @discord.ui.button(label="🎟️ Close Ticket", style=discord.ButtonStyle.red, custom_id="req:close_ticket")
+    async def close_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        channel = interaction.channel
+
+        if channel is None:
+            return
+        
+        agent = await ticket_pull(channel.name)
+        authorized = False
+
+        if agent == 0:
+            if interaction.user.guild_permissions.administrator:
+                authorized = True
+            else:
+                await interaction.response.send_message(f"{interaction.user.mention} You do not have permission to close unclaimed tickets!", ephemeral=True, delete_after=5)
+                return
+        else:
+            if agent == interaction.user.id:
+                authorized = True
+            else:
+                await interaction.response.send_message(f"{interaction.user.mention} Unauthorized action. You are not the agent of this ticket.", delete_after=5, ephemeral=True)
+                return
+
+
+        if authorized:
+            await ticket_close(channel.name, interaction.user.id, f"Agent {interaction.user.name} ({interaction.user.id}) has closed the ticket.")
+            await interaction.response.send_message(f"Agent {interaction.user.mention} ({interaction.user.id}) has closed this ticket. Closing <t:{round(add_time("5s", datetime.now()).timestamp())}:R>", delete_after=5, ephemeral=True)
+            await asyncio.sleep(5)
+            await interaction.channel.delete(reason=f"Agent {interaction.user.name} ({interaction.user.id}) has closed the ticket.")
 
 class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
 
@@ -113,17 +143,17 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
 
     async def on_submit(self, interaction: discord.Interaction):
 
-        buttons = ModerationModalView(self)
+        category = await get_channel(interaction.guild, os.getenv("TICKET_CATEGORY"))
+        agent_ping = await get_role(interaction.guild, os.getenv("MOD_ROLE"))
 
         assert isinstance(self.environment.component, discord.ui.Select)
         assert isinstance(self.violation.component, discord.ui.Select)
         assert isinstance(self.evidence.component, discord.ui.TextInput)
         assert isinstance(self.violator.component, discord.ui.UserSelect)
 
-        category = await get_channel(interaction.guild, os.getenv("TICKET_CATEGORY"))
-        agent_ping = await get_role(interaction.guild, os.getenv("MOD_ROLE"))
-
         if agent_ping is not None:
+
+            buttons = ModerationModalView(self, agent_ping)
 
             text_channel = await interaction.guild.create_text_channel(
                 name=self.id,
