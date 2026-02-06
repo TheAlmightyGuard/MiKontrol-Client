@@ -2,6 +2,7 @@ import discord, os, asyncio
 from datetime import datetime
 
 from services.ticket_services import ticket_create, ticket_assign, ticket_close, ticket_pull
+from services.guild_services import grab_preferred_role
 from utils.get_fetch import get_channel, get_role
 from utils.time_functions import add_time
 class ModerationModalView(discord.ui.View):
@@ -143,13 +144,15 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
 
     async def on_submit(self, interaction: discord.Interaction):
 
-        category = await get_channel(interaction.guild, os.getenv("TICKET_CATEGORY"))
-        agent_ping = await get_role(interaction.guild, os.getenv("MOD_ROLE"))
-
         assert isinstance(self.environment.component, discord.ui.Select)
         assert isinstance(self.violation.component, discord.ui.Select)
         assert isinstance(self.evidence.component, discord.ui.TextInput)
         assert isinstance(self.violator.component, discord.ui.UserSelect)
+
+        category = await get_channel(interaction.guild, os.getenv("TICKET_CATEGORY"))
+
+        preferredRole = await grab_preferred_role(interaction.guild.id, 'moderator')
+        agent_ping = await get_role(interaction.guild, preferredRole)
 
         if agent_ping is not None:
 
@@ -217,6 +220,8 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
             
             
             await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}", delete_after=10, ephemeral=True)
+        else:
+            await interaction.response.send_message("There is no selected role to notify set for this inquiry. Try again later...", ephemeral=True, delete_after=10)
 
         
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:

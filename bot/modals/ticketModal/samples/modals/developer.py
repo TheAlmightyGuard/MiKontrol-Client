@@ -3,6 +3,7 @@ import discord, os, asyncio
 from datetime import datetime
 
 from services.ticket_services import ticket_create, ticket_assign, ticket_pull, ticket_close
+from services.guild_services import grab_preferred_role
 from utils.get_fetch import get_channel, get_role
 from utils.time_functions import add_time
 
@@ -129,15 +130,16 @@ class DeveloperModal(discord.ui.Modal, title="Open a ticket [ Developer ]"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-
-        category = await get_channel(interaction.guild, os.getenv("TICKET_CATEGORY"))
-        agent_ping = await get_role(interaction.guild, os.getenv("DEV_ROLE"))
-
         assert isinstance(self.subject.component, discord.ui.TextInput)
         assert isinstance(self.issue.component, discord.ui.TextInput)
         assert isinstance(self.evidence.component, discord.ui.TextInput)
 
-        if agent_ping is not None:        
+        category = await get_channel(interaction.guild, os.getenv("TICKET_CATEGORY"))
+
+        preferredRole = await grab_preferred_role(interaction.guild.id, 'developer')
+        agent_ping = await get_role(interaction.guild, preferredRole)
+
+        if agent_ping is not None:     
 
             buttons = DeveloperModalView(self, agent_ping)
 
@@ -198,7 +200,8 @@ class DeveloperModal(discord.ui.Modal, title="Open a ticket [ Developer ]"):
             
             
             await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}", delete_after=10, ephemeral=True)
-
+        else:
+            await interaction.response.send_message("There is no selected role to notify set for this inquiry. Try again later...", ephemeral=True, delete_after=10)
         
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await interaction.response.send_message(f'Oops! Something went wrong. {error}', ephemeral=True)

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 from models.base import BaseModelConfig, MiBaseModel
 from models.tickets import TicketModalTemplate
 
@@ -11,13 +11,20 @@ class GuildUpdate(BaseModelConfig):
     locale: Optional[str] = None
     premiumLevel: Optional[int] = None
 
+class GuildPreferredRole(BaseModelConfig):
+    purpose: Literal["developer", "moderator", "muted"]
+    id: int
+
 class GuildPreferences(MiBaseModel):
     serverId: int
 
     # Moderation
     prefix: str = "!"
-    mutedRole: Optional[int] = None
 
     # Tickets
     ticket_category : Optional[int] = 0
     custom_tickets: Optional[list[TicketModalTemplate]] = None
+
+    # Roles
+    preferredRoles: list[GuildPreferredRole] = None
+

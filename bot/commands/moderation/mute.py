@@ -8,8 +8,9 @@ from typing import Optional
 from models.internal import CogModel
 
 from utils.time_functions import add_time
+from utils.get_fetch import get_role
 from services.moderation_services import add_mute, remove_mute
-from services.guild_services import get_guild_preferences
+from services.guild_services import grab_preferred_role
 
 import uuid
 import inspect
@@ -65,21 +66,14 @@ class Mute(commands.Cog):
                 listRoles.append(role.id)
                 await user.remove_roles(role)
 
-        guildData = await get_guild_preferences(ctx.guild.id)
+        roleId = await grab_preferred_role(ctx.guild.id, 'muted')
 
-        if guildData.mutedRole is None:
-            await ctx.send("No muted role found. Skipping...", ephemeral=True)
+        mutedRole = await get_role(ctx.guild, roleId)
+        if mutedRole is None:
+            await ctx.send("No muted role found / selected. Skipping...", ephemeral=True, delete_after=5)
+            return
         else:
-            role = ctx.guild.get_role(guildData.mutedRole)
-
-            if role is None:
-                try:
-                    role = await ctx.guild.fetch_role(guildData.mutedRole)
-                except Exception as e:
-                    await ctx.send("Role was not found. Skipping...")
-
-            await user.add_roles(role)
-
+            await user.add_roles(mutedRole)
 
         actionId = str(uuid.uuid7())
 
@@ -148,36 +142,25 @@ class Mute(commands.Cog):
         )
         
         if result is None:
-            await ctx.send("This person is currently not muted.", ephemeral=True)
+            await ctx.send("This person is currently not muted.", ephemeral=True, delete_after=5)
             return
 
         roles = result.listRoles
 
         for roleId in roles:
-            role = ctx.guild.get_role(roleId)
-            if role is None:
-                try:
-                    role = await ctx.guild.fetch_role(roleId)
-                except Exception as e:
-                    print("Role cannot be found. Skipping...")
-                    
 
+            role = await get_role(ctx.guild, roleId)
+            if role is None:
+                continue
+                    
             await user.add_roles(role)
 
-        guildData = await get_guild_preferences(ctx.guild.id)
-
-        if guildData.mutedRole is None:
-            await ctx.send("No muted role found. Skipping...", ephemeral=True)
+        mutedRole = await get_role(ctx.guild, await grab_preferred_role(ctx.guild.id, 'muted'))
+        if mutedRole is None:
+            await ctx.send("No muted role found / selected. Skipping...", ephemeral=True, delete_after=5)
+            return
         else:
-            role = ctx.guild.get_role(guildData.mutedRole)
-
-            if role is None:
-                try:
-                    role = await ctx.guild.fetch_role(guildData.mutedRole)
-                except Exception as e:
-                    await ctx.send("Role was not found. Skipping...")
-
-            await user.remove_roles(role)
+            await user.remove_roles(mutedRole)
 
 
         actionId = str(uuid.uuid7())

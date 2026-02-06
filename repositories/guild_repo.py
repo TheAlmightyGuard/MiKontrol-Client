@@ -1,5 +1,5 @@
 from database.mongo import get_db
-from models.guild import Guild, GuildPreferences, GuildUpdate
+from models.guild import Guild, GuildPreferences, GuildUpdate, GuildPreferredRole
 
 async def get_guild(serverId: int) -> Guild | None:
 
@@ -98,8 +98,6 @@ async def guild_create(src: Guild) -> bool:
     await guild_create_config(src.serverId)
 
     return insert.did_upsert
-
-
 
 async def guild_update(serverId, src: GuildUpdate) -> bool:
 

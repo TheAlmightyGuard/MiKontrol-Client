@@ -1,11 +1,14 @@
 import asyncio
 import os
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
 from redis import Redis
 from models.moderation import ModerationTask
 from models.tickets import TicketEntry
+from models.guild import GuildPreferredRole
 from repositories.mod_repo import delete_task, get_redis_task, update_log
+
+from utils.get_fetch import get_role, get_guild, get_member, get_user
 
 from rich.console import Console
 
@@ -87,21 +90,20 @@ async def mod_tasks(client):
                 redis_client.zrem("moderation:expires", id)
                 continue
 
-            
-            guild = await client.fetch_guild(document.guildId)
+            guild = await get_guild(client, document.guildId)
 
             if guild is None:
                 console.log("Guild not found. Skipping...")
                 continue
             
             if document.type == 'T_MUTE':
-                member = await guild.fetch_member(document.targetId)
+                member = await get_member(guild, document.targetId)
                 if member is None:
                     console.log("Member not found. Skipping...")
                     continue
 
                 for roleId in document.listRoles:
-                    role = guild.get_role(roleId)
+                    role = await get_role(guild, roleId)
 
                     if role is not None:
                         await member.add_roles(role)
@@ -109,14 +111,12 @@ async def mod_tasks(client):
                         console.log("Role not found. Skipping...")
 
             elif document.type == 'T_BAN':
-                user = client.get_user(document.targetId)
+                user = await get_user(client, document.targetId)
+
                 if user is None:
-                    try:
-                        user = await client.fetch_user(document.targetId)
-                    except:
-                        console.log(f"User ID [{document.targetId}] not found. Removing clutter...")
-                        redis_client.zrem("moderation:expires", document.actionId)
-                        continue
+                    console.log(f"User ID [{document.targetId}] not found. Removing clutter...")
+                    redis_client.zrem("moderation:expires", document.actionId)
+                    continue
 
                 try:
                     await guild.unban(
@@ -135,7 +135,6 @@ async def mod_tasks(client):
 
 
         await asyncio.sleep(5)
-
 
 def add_agent(src: TicketEntry) -> bool:
     
@@ -183,5 +182,37 @@ def get_agent(
         "ticketAgent",
         ticket_id,
     )
+
+    return result
+
+def set_guild_set_roles(
+    preferredRoles : list[GuildPreferredRole],
+    guildId: int
+):
+    
+    for preferred in preferredRoles:
+        redis_client.hset(
+            f"guildSettings:{guildId}:preferredRoles",
+            preferred.purpose,
+            preferred.id
+        )
+
+def get_guild_set_roles(
+    purpose: Literal['developer', 'moderator', 'muted'],
+    guildId: int
+) -> GuildPreferredRole | None:
+    
+    result = redis_client.hget(
+        f"guildSettings:{guildId}:preferredRoles",
+        purpose
+    )
+
+    if result is not None:
+        result = GuildPreferredRole(
+            purpose=purpose,
+            id=result
+        )
+
+        return result
 
     return result
