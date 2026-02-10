@@ -52,5 +52,7 @@ async def grab_preferred_role(
         for preferred in result:
             if preferred.purpose == purpose:
                 return preferred.id
+            
+        return None
 
     return result.id
