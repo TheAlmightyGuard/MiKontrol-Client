@@ -95,9 +95,12 @@ class ModerationModalView(discord.ui.View):
             await asyncio.sleep(5)
             await interaction.channel.delete(reason=f"Agent {interaction.user.name} ({interaction.user.id}) has closed the ticket.")
 
-class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
+class ModerationModal(discord.ui.Modal):
 
-    
+    def __init__(self, agent_ping : discord.Role):
+        super().__init__(title=f"Open a Ticket [ Moderation ]")
+        self.agent = agent_ping
+
     violator = discord.ui.Label(
         text='Offender',
         description='Enter the name of the Violator',
@@ -151,77 +154,70 @@ class ModerationModal(discord.ui.Modal, title="Open a ticket [ Moderation ]"):
 
         category = await get_channel(interaction.guild, os.getenv("TICKET_CATEGORY"))
 
-        preferredRole = await grab_preferred_role(interaction.guild.id, 'moderator')
-        agent_ping = await get_role(interaction.guild, preferredRole)
+        buttons = ModerationModalView(self, self.agent)
 
-        if agent_ping is not None:
+        text_channel = await interaction.guild.create_text_channel(
+            name=self.id,
+            reason=f"Ticket creation by: {interaction.user.name}",
+            category=category
+        )
+        
+        embed = discord.Embed(
+            title="A Moderator Ticket has appeared!",
+            color=discord.Color.from_str("#ff6b00")
+        )
+        embed.set_footer(
+            text="Powered by MiKontrol"
+        )
 
-            buttons = ModerationModalView(self, agent_ping)
+        embed.add_field(
+            name="Reporter",
+            value=f"{interaction.user.mention}",
+            inline=True
+        )
+        embed.add_field(
+            name="Offender",
+            value=f"{self.violator.component.values[0].mention}",
+            inline=True
+        )
+        embed.add_field(
+            name="Report Date",
+            value=f"<t:{round(datetime.now().timestamp())}:f>",
+            inline=False
+        )
+        embed.add_field(
+            name="Report Environment",
+            value=f"{self.environment.component.values[0]}",
+            inline=False
+        )
+        embed.add_field(
+            name="Report Type",
+            value=f"{self.violation.component.values[0]}",
+            inline=False
+        )
+        embed.add_field(
+            name="Evidence",
+            value=f"{self.evidence.component.value}",
+            inline=False
+        )
 
-            text_channel = await interaction.guild.create_text_channel(
-                name=self.id,
-                reason=f"Ticket creation by: {interaction.user.name}",
-                category=category
-            )
-            
-            embed = discord.Embed(
-                title="A Moderator Ticket has appeared!",
-                color=discord.Color.from_str("#ff6b00")
-            )
-            embed.set_footer(
-                text="Powered by MiKontrol"
-            )
+        await text_channel.send(embed=embed, view=buttons)
+        self.msg = await text_channel.send( f"<@&{self.agent.id}>" + f" <@{interaction.user.id}>" )
 
-            embed.add_field(
-                name="Reporter",
-                value=f"{interaction.user.mention}",
-                inline=True
-            )
-            embed.add_field(
-                name="Offender",
-                value=f"{self.violator.component.values[0].mention}",
-                inline=True
-            )
-            embed.add_field(
-                name="Report Date",
-                value=f"<t:{round(datetime.now().timestamp())}:f>",
-                inline=False
-            )
-            embed.add_field(
-                name="Report Environment",
-                value=f"{self.environment.component.values[0]}",
-                inline=False
-            )
-            embed.add_field(
-                name="Report Type",
-                value=f"{self.violation.component.values[0]}",
-                inline=False
-            )
-            embed.add_field(
-                name="Evidence",
-                value=f"{self.evidence.component.value}",
-                inline=False
-            )
+        self.stop()
 
-            await text_channel.send(embed=embed, view=buttons)
-            self.msg = await text_channel.send( f"<@&{agent_ping.id}>" + f" <@{interaction.user.id}>" )
-
-            self.stop()
-
-            await ticket_create(
-                guild_id=interaction.guild_id,
-                ticket_type="Moderation",
-                ticket_id=self.id,
-                author_id=interaction.user.id,
-                ticket_channel=text_channel.id,
-                ticket_category=text_channel.category_id,
-                agent_role_id=agent_ping.id
-            )
-            
-            
-            await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}", delete_after=10, ephemeral=True)
-        else:
-            await interaction.response.send_message("There is no selected role to notify set for this inquiry. Try again later...", ephemeral=True, delete_after=10)
+        await ticket_create(
+            guild_id=interaction.guild_id,
+            ticket_type="Moderation",
+            ticket_id=self.id,
+            author_id=interaction.user.id,
+            ticket_channel=text_channel.id,
+            ticket_category=text_channel.category_id,
+            agent_role_id=self.agent.id
+        )
+        
+        
+        await interaction.response.send_message(f"Your ticket has been opened https://discord.com/channels/{interaction.guild_id}/{text_channel.id}", delete_after=10, ephemeral=True)
 
         
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:

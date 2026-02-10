@@ -10,6 +10,8 @@ from models.tickets import TicketModalTemplate
 from models.guild import GuildPreferences
 
 from bot.modals.ticketModal.template.ticketTemplate import TicketModal
+from services.guild_services import grab_preferred_role
+from utils.get_fetch import get_role
 from utils.time_functions import add_time
 class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
 
@@ -57,9 +59,21 @@ class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
         modal = None
 
         if target == "Moderation":
-            modal = ModerationModal()
+            preferredRole = await grab_preferred_role(interaction.guild.id, 'moderator')
+            agent_ping = await get_role(interaction.guild, preferredRole)
+
+            if agent_ping is None:
+                await interaction.response.send_message("There is no selected role to notify set for this inquiry. Try again later...", ephemeral=True, delete_after=10)
+                return
+            modal = ModerationModal(agent_ping)
         elif target == "Development":
-            modal = DeveloperModal()
+            preferredRole = await grab_preferred_role(interaction.guild.id, 'developer')
+            agent_ping = await get_role(interaction.guild, preferredRole)
+
+            if agent_ping is None:
+                await interaction.response.send_message("There is no selected role to notify set for this inquiry. Try again later...", ephemeral=True, delete_after=10)
+                return
+            modal = DeveloperModal(agent_ping)
         else:
             for custom in self.config.custom_tickets:
                 if custom.title == target:
