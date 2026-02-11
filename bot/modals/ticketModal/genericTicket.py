@@ -23,16 +23,17 @@ class GeneralModal(discord.ui.Modal, title="Open a ticket [ ??? ]"):
         options.append(discord.SelectOption(label='Moderation', description='Report will be directed to Moderation Team'))
         options.append(discord.SelectOption(label='Development', description='Report will be directed to Developer Team Support'))
 
-        for modal in guildConfig.custom_tickets:
-            if isinstance(modal, TicketModalTemplate):
+        if guildConfig.custom_tickets is not None:
+            for modal in guildConfig.custom_tickets:
+                if isinstance(modal, TicketModalTemplate):
 
-                option = discord.SelectOption(
-                    label=modal.title,
-                    description=modal.description,
-                    value=modal.title
-                )
+                    option = discord.SelectOption(
+                        label=modal.title,
+                        description=modal.description,
+                        value=modal.title
+                    )
 
-                options.append(option)
+                    options.append(option)
 
         self.add_item(
             discord.ui.Label(
