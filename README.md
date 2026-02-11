@@ -23,11 +23,17 @@ _As of March 15th, 2025_\
 ### Project Phases:
   * [🟢] Phase 1: Build base structures and confirm connection to DISCORD BO
   * [🟢] Phase 2: Connect with **MONGO DATABASE** & **REDIS**
-  * [🟠] Phase 3: Build commands and management systems
+  * [🟢] Phase 3: Build commands and management systems [See below of implemented commands & systems]
   * [🟠] Phase 4: Build host capability for API
                 _**TBD later phases**_
  #### Project Code:
   * **MKTO-CLT-1**
+
+### Implemented Commands & Systems:
+  * Ping Command
+  * Sync Command
+  * Moderation System [Ban / Kick / Mute / Warn]
+  * Tickey System [Open / Close tickets]
 
 ## Library Usage:
 * discord.py (Backbone of the client)
