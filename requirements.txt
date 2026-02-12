@@ -12,3 +12,5 @@ redis
 pymongo
 dnspython
 certifi
+itsdangerous
+httpx
