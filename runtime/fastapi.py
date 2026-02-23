@@ -31,7 +31,7 @@ async def check_status():
 async def startService():
     config = uvicorn.Config(
         app,
-        host="0.0.0.0",
+        host="127.0.0.1",
         port=8000,
         loop="asyncio",
         log_config=None

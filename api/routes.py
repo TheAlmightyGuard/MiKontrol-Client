@@ -185,15 +185,16 @@ async def login_callback(code: str):
 
         signed = serializer.dumps(session_payload)
 
-        response = RedirectResponse("https://mikontrol.ca/dashboard")
+        response = RedirectResponse("http://192.168.0.147:3000/dashboard")
 
         response.set_cookie(
             "session",
             signed,
             60*60*24*7,
-            httponly=False,
+            httponly=True,
+            samesite="none",
             secure=True,
-            samesite="lax"
+            domain='mikontrol.ca'
         )
 
         return response
