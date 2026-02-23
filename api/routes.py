@@ -1,6 +1,6 @@
 # FastAPI
 from discord.ext import commands
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse
 
 # Serialization
@@ -178,11 +178,14 @@ async def login_callback(code: str):
         user_data = await client.get("https://discord.com/api/v10/users/@me", headers=user_header)
         user_data = user_data.json()
 
+        user_id = user_data['id']
+        user_avatar = user_data['avatar']
+
         session_payload = {
-            'id': user_data['id'],
+            'id': user_id,
             'username': user_data['username'],
             'global_name': user_data['global_name'],
-            'avatar': user_data['avatar'],
+            'avatar': f"https://cdn.discordapp.com/avatars/{user_id}/{user_avatar}.png?size=4096"
         }
 
         signed = serializer.dumps(session_payload)
@@ -199,3 +202,17 @@ async def login_callback(code: str):
         )
 
         return response
+
+@router.get("/auth/session")
+async def session_callback(request : Request):
+    cookie = request.cookies.get('session')
+
+    if cookie is None:
+        raise HTTPException(400, detail='Not authenticated')
+    
+    try:
+        user = serializer.loads(cookie)
+    except:
+        raise HTTPException(400, detail='Unexpected Error')
+    
+    return user
