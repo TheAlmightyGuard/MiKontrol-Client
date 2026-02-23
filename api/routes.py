@@ -18,6 +18,7 @@ CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
 WEB_REDIRECT = os.getenv("WEB_REDIRECT_OAUTH2")
+OAUTH2_URI = os.getenv("API_OAUTH2_URL")
 OAUTH2_CALLBACK = os.getenv("API_OAUTH2_CALLBACK")
 
 serializer = URLSafeSerializer(secret_key=os.getenv("OAUTH2_SECRET"), salt="oauth2-dashboard")
@@ -145,13 +146,11 @@ async def getGuildData(user_id : str):
 
 @router.get("/auth/login")
 async def login():
-    url = f"https://discord.com/oauth2/authorize?client_id=1463680415012491337&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fauth%2Fcallback&scope=guilds+identify+guilds.members.read"
+    url = OAUTH2_URI
     return RedirectResponse(url)
 
 @router.get("/auth/callback")
 async def login_callback(code: str):
-    console.log(code)
-    
     async with httpx.AsyncClient() as client:
         token_payload = {
             'grant_type': 'authorization_code',
@@ -171,7 +170,6 @@ async def login_callback(code: str):
 
         authorization_type = release["token_type"]
         authorization_token = release["access_token"]
-        expiration = release["expires_in"]
 
         user_header = {
             "Authorization": f"{authorization_type} {authorization_token}"
@@ -197,8 +195,7 @@ async def login_callback(code: str):
             60*60*24*7,
             httponly=True,
             samesite="none",
-            secure=True,
-            domain='mikontrol.ca'
+            secure=True
         )
 
         return response
