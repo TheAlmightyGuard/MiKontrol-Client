@@ -199,8 +199,3 @@ async def login_callback(code: str):
         )
 
         return response
-
-        
-
-
-
