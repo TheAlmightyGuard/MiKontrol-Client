@@ -16,6 +16,10 @@ console = Console()
 router = APIRouter()
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+
+WEB_REDIRECT = os.getenv("WEB_REDIRECT_OAUTH2")
+OAUTH2_CALLBACK = os.getenv("API_OAUTH2_CALLBACK")
+
 serializer = URLSafeSerializer(secret_key=os.getenv("OAUTH2_SECRET"), salt="oauth2-dashboard")
 
 def set_client(discord_client : commands.Bot):
@@ -152,7 +156,7 @@ async def login_callback(code: str):
         token_payload = {
             'grant_type': 'authorization_code',
             'code': code,
-            'redirect_uri': 'http://localhost:8000/auth/callback',
+            'redirect_uri': OAUTH2_CALLBACK,
             'client_id': CLIENT_ID,
             'client_secret': CLIENT_SECRET
         }
@@ -185,7 +189,7 @@ async def login_callback(code: str):
 
         signed = serializer.dumps(session_payload)
 
-        response = RedirectResponse("http://192.168.0.147:3000/dashboard")
+        response = RedirectResponse(WEB_REDIRECT)
 
         response.set_cookie(
             "session",
