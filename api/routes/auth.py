@@ -78,7 +78,7 @@ async def login_callback(code: str):
             signed,
             60*60*24*7,
             httponly=True,
-            samesite="none",
+            samesite="lax",
             secure=True
         )
 
