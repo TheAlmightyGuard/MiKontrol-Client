@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import set_client, router
+from api.routes import auth, guilds
 import uvicorn
 
 # FastAPI setup
@@ -17,11 +17,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(router)
+app.include_router(auth.router)
+app.include_router(guilds.router)
 
 
 # GET Endpoints
-@app.get("/debug")
+@app.get("/")
 async def check_status():
     return {"status": "API is running"}
 

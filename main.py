@@ -4,14 +4,14 @@ sys.dont_write_bytecode = True
 import asyncio
 import os
 from dotenv import load_dotenv
-from bot.client import create_client, MiBotClient
+from bot.client import MiBotClient
+from bot.instance import client
 from cache.redis_manager import connect_redis
 from database.mongo import connect_db, close_mongo
 
 from utils.cogs_functions import clear_console, pre_loading
 load_dotenv()
 token = os.getenv("DISCORD_BOT_TOKEN")
-client = create_client()
 
 # Discord Bot Client
 async def start_client():

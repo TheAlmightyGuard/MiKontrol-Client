@@ -29,6 +29,7 @@ async def get_channel(guild : Guild, channel_id : int) -> GuildChannel | None:
     return channel
 
 async def get_guild(client : Bot, guild_id : int) -> Guild | None:
+
     guild = client.get_guild(guild_id)
 
     if guild is None:
