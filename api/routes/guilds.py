@@ -1,6 +1,12 @@
+import os
+
+from itsdangerous import URLSafeSerializer
+
 from utils.get_fetch import get_guild, get_user
 from bot.instance import client
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Request
+
+serializer = URLSafeSerializer(secret_key=os.getenv("OAUTH2_SECRET"), salt="oauth2-dashboard")
 
 router = APIRouter()
 
@@ -10,7 +16,7 @@ async def getGuild(guild_id : str):
     guild = await get_guild(client, int(guild_id))
 
     if guild is None:
-        return { "Error": "Guild not found"}
+        raise HTTPException(404, detail='No guild found')
     
     payload = {
         'serverId' : guild.id,
@@ -23,13 +29,23 @@ async def getGuild(guild_id : str):
 
     return payload
 
-@router.get("/user/{user_id}")
-async def getUser(user_id : str):
+@router.get("/user/")
+async def getUser(request: Request):
     
-    user = await get_user(client, int(user_id))
+    cookie = request.cookies.get('session')
+    
+    try:
+        user = serializer.loads(cookie)
+    except:
+        raise HTTPException(400, detail='Unexpected Error')
+
+    if cookie is None:
+        raise HTTPException(400, detail='No cookies found')
+
+    user = await get_user(client, user['id'])
     
     if user is None:
-        return { "Error": "User not found"}
+        raise HTTPException(404, detail='No user found')
     
     payload = {
         'name': user.name,
@@ -41,18 +57,28 @@ async def getUser(user_id : str):
     return payload
 
 
-@router.get("/user/{user_id}/mutuals")
-async def getUser(user_id : str):
+@router.get("/user/mutuals")
+async def getUser(request : Request):
     
-    user = await get_user(client, int(user_id))
+    cookie = request.cookies.get('session')
+    
+    try:
+        user = serializer.loads(cookie)
+    except:
+        raise HTTPException(400, detail='Unexpected Error')
+
+    if cookie is None:
+        raise HTTPException(400, detail='No cookies found')
+
+    user = await get_user(client, user['id'])
     
     if user is None:
-        return { "Error": "User not found"}
+        raise HTTPException(404, detail='No user found')
     
     mutuals = user.mutual_guilds
     
     if len(mutuals) == 0:
-        return { "Error": "No mutuals founds"}
+        raise HTTPException(404, detail='No mutuals found')
     
     payload = {
         'mutual_guilds' : [],
@@ -62,7 +88,11 @@ async def getUser(user_id : str):
     mutualsPayload = []
 
     for guild in mutuals:
-        guildPayload = {"name": guild.name, "id": guild.id}
+        guildPayload = {
+            "name": guild.name, 
+            "id": guild.id,
+            "icon": guild.icon.url if guild.icon is not None else None
+        }
         
         mutualsPayload.append(guildPayload)
 
