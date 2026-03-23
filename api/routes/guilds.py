@@ -10,25 +10,6 @@ serializer = URLSafeSerializer(secret_key=os.getenv("OAUTH2_SECRET"), salt="oaut
 
 router = APIRouter()
 
-@router.get("/guild/{guild_id}")
-async def getGuild(guild_id : str):
-
-    guild = await get_guild(client, int(guild_id))
-
-    if guild is None:
-        raise HTTPException(404, detail='No guild found')
-    
-    payload = {
-        'serverId' : guild.id,
-        'icon' : guild.icon.url if guild.icon is not None else None,
-        'mfaLevel' : guild.mfa_level,
-        'owner': guild.owner.id,
-        'member_count' : guild.member_count,
-        'boostLevel' : guild.premium_tier
-    }
-
-    return payload
-
 @router.get("/user/")
 async def getUser(request: Request):
     
@@ -58,7 +39,7 @@ async def getUser(request: Request):
 
 
 @router.get("/user/mutuals")
-async def getUser(request : Request):
+async def getMutual(request : Request):
     
     cookie = request.cookies.get('session')
     
@@ -90,7 +71,7 @@ async def getUser(request : Request):
     for guild in mutuals:
         guildPayload = {
             "name": guild.name, 
-            "id": guild.id,
+            "id": str(guild.id),
             "icon": guild.icon.url if guild.icon is not None else None
         }
         
@@ -99,5 +80,97 @@ async def getUser(request : Request):
         payload['mutual_count'] += 1
 
     payload['mutual_guilds'] = mutualsPayload
+
+    return payload
+
+@router.get("/user/guild/members")
+async def getGuildCount(request : Request):
+    
+    sessionCookie = request.cookies.get('session')
+    guildCookie = request.cookies.get('guild')
+    
+    try:
+        user = serializer.loads(sessionCookie)
+    except:
+        raise HTTPException(400, detail='Unexpected Error')
+
+    if sessionCookie is None or guildCookie is None:
+        raise HTTPException(400, detail='Missing cookies')
+
+    user = await get_user(client, user['id'])
+    
+    if user is None:
+        raise HTTPException(404, detail='No user found')
+    
+    mutuals = user.mutual_guilds
+    
+    if len(mutuals) == 0:
+        raise HTTPException(404, detail='No mutuals found')
+    
+    target = None
+
+    for guild in mutuals:
+        if guild.id == int(guildCookie):
+            target = guild
+
+    if target is None:
+        raise HTTPException(400, detail="Target Guild is not within your mutuals")
+    
+    roleMemberCount = await target.role_member_counts()
+
+    rolePayloads = []
+
+    for role, count in roleMemberCount.items():
+        rolePayloads.append({
+            'name': role.name,
+            'amount': count
+        })
+
+    payload = {
+        'by_role': rolePayloads,
+        'total': guild.member_count
+    }
+
+    return payload
+
+@router.get("/user/guild")
+async def getGuild(request : Request):
+
+    sessionCookie = request.cookies.get('session')
+    guildCookie = request.cookies.get('guild')
+    
+    try:
+        user = serializer.loads(sessionCookie)
+    except:
+        raise HTTPException(400, detail='Unexpected Error')
+
+    if sessionCookie is None or guildCookie is None:
+        raise HTTPException(400, detail='Missing cookies')
+
+    user = await get_user(client, user['id'])
+    
+    if user is None:
+        raise HTTPException(404, detail='No user found')
+    
+    mutuals = user.mutual_guilds
+    
+    if len(mutuals) == 0:
+        raise HTTPException(404, detail='No mutuals found')
+    
+    target = None
+
+    for guild in mutuals:
+        if guild.id == int(guildCookie):
+            target = guild
+
+    if target is None:
+        raise HTTPException(400, detail="Target Guild is not within your mutuals")
+    
+    
+    payload = {
+        'name': target.name,
+        'id': str(target.id),
+        'icon': target.icon.url if target.icon is None else None
+    }
 
     return payload
