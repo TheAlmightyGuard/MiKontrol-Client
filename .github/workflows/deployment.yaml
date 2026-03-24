@@ -7,11 +7,11 @@ on:
       - 'INTERNAL-4-WORKFLOW'
 
 env:
-  pswd: ${{ secret.SSH_PSWD }}
-  user: ${{ secret.SSH_USER }}
-  private: ${{ secret.SSH_PRIVATE_KEY }}
-  cf_client: ${{ secret.CF_CLIENT_ID }}
-  cf_secret: ${{ secret.CF_CLIENT_SECRET }}
+  pswd: ${{ secrets.SSH_PSWD }}
+  user: ${{ secrets.SSH_USER }}
+  private: ${{ secrets.SSH_PRIVATE_KEY }}
+  cf_client: ${{ secrets.CF_CLIENT_ID }}
+  cf_secret: ${{ secrets.CF_CLIENT_SECRET }}
 
 jobs:
   build:
