@@ -26,7 +26,7 @@ jobs:
         run: |
           ssh -p ${{ vars.SSH_PORT }} \
             -o ProxyCommand="cloudflared access ssh --hostname ${{ vars.SSH_HOST }} --service-token-id ${{ secrets.CF_CLIENT_ID }} --service-token-secret ${{ secrets.CF_CLIENT_SECRET }}" \
-            ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} <<
+            ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << 'EOF'
               cd /home/rpastor05/MiKontrol-Client
               git switch ${{github.ref_name}}
               git pull
