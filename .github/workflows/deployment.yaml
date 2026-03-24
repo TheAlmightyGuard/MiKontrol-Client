@@ -1,0 +1,39 @@
+name: Discord Bot Deployment
+
+on:
+  push:
+    branches:
+      - 'release'
+
+env:
+  pswd: ${{ secret.SSH_PSWD }}
+  user: ${{ secret.SSH_USER }}
+  private: ${{ secret.SSH_PRIVATE_KEY }}
+  cf_client: ${{ secret.CF_CLIENT_ID }}
+  cf_secret: ${{ secret.CF_CLIENT_SECRET }}
+
+jobs:
+  build:
+    runs_on: ubuntu-latest
+    steps:
+      - name: Checkout Action
+        uses: actions/checkout
+        with:
+          version: 'latest'
+
+      - name: Cloudflared
+        uses: AnimMouse/setup-cloudflared@v2
+
+      - name: SSH Deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: 'api.mikontrol.ca'
+          username: ${user}
+          key: ${private}
+          proxy_command: >
+            cloudflared access ssh --hostname %h
+            --id ${cf_client}
+            --secret ${cf_secret}
+          script: |
+            cd /home/rpastor05/MiKontrol-Client
+            echo *
