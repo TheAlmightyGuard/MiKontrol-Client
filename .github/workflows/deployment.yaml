@@ -7,6 +7,7 @@ on:
       - 'INTERNAL-4-WORKFLOW'
 
 env:
+  host: ${{ secrets.SSH_HOST }}
   pswd: ${{ secrets.SSH_PSWD }}
   user: ${{ secrets.SSH_USER }}
   private: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -26,7 +27,7 @@ jobs:
       - name: SSH Deployment
         uses: appleboy/ssh-action@master
         with:
-          host: 'api.mikontrol.ca'
+          host: ${host}
           username: ${user}
           key: ${private}
           proxy_command: >
