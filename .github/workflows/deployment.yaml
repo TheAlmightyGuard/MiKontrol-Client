@@ -18,9 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Action
-        uses: actions/checkout
-        with:
-          version: 'latest'
+        uses: actions/checkout@v6.0.2
 
       - name: Cloudflared
         uses: AnimMouse/setup-cloudflared@v2
