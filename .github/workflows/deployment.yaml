@@ -31,5 +31,4 @@ jobs:
               git switch ${{github.ref_name}}
               git pull
               echo ${{ secrets.SSH_PSWD }} | sudo -S systemctl restart discordbot
-              systemctl status discordbot
 
