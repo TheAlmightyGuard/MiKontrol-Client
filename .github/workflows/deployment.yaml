@@ -22,15 +22,10 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           echo "StrictHostKeyChecking no" >> ~/.ssh/config
 
-      - name: SSH Deployment
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ env.SSH_HOST }}
-          username: ${{ env.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          run: |
-            ssh -o ProxyCommand="cloudflared access ssh --hostname ${{ env.SSH_HOST }} --id ${{ secrets.CF_CLIENT_ID }} --secret ${{ secrets.CF_CLIENT_SECRET }}" \
-            ${{env.SSH_USER}}@${{env.SSH_HOST}} << 'EOF'
-              cd /home/rpastor05/MiKontrol-Client
-              echo *
-            EOF
+      - name: SSH Deployment (Tunnel)
+        run: |
+          ssh -o ProxyCommand="cloudflared access ssh --hostname ${{ env.SSH_HOST }} --id ${{ secrets.CF_CLIENT_ID }} --secret ${{ secrets.CF_CLIENT_SECRET }}" \
+          ${{ env.SSH_USER }}@${{ env.SSH_HOST }} << 'EOF'
+            cd /home/rpastor05/MiKontrol-Client
+            echo *
+          EOF
