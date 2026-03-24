@@ -28,6 +28,8 @@ jobs:
             -o ProxyCommand="cloudflared access ssh --hostname ${{ vars.SSH_HOST }} --service-token-id ${{ secrets.CF_CLIENT_ID }} --service-token-secret ${{ secrets.CF_CLIENT_SECRET }}" \
             ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << 'EOF'
               cd /home/rpastor05/MiKontrol-Client
-              echo *
-            EOF
+              git switch ${{github.ref_name}}
+              git pull
+              echo ${{ secrets.SSH_PSWD }} | sudo -S systemctl restart discordbot
+            'EOF'
 
