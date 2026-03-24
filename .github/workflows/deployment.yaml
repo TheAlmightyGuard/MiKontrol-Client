@@ -5,15 +5,6 @@ on:
     branches:
       - 'release'
       - 'INTERNAL-4-WORKFLOW'
-
-env:
-  host: ${{ secrets.SSH_HOST }}
-  pswd: ${{ secrets.SSH_PSWD }}
-  user: ${{ secrets.SSH_USER }}
-  private: ${{ secrets.SSH_PRIVATE_KEY }}
-  cf_client: ${{ secrets.CF_CLIENT_ID }}
-  cf_secret: ${{ secrets.CF_CLIENT_SECRET }}
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,16 +15,22 @@ jobs:
       - name: Cloudflared
         uses: AnimMouse/setup-cloudflared@v2
 
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "StrictHostKeyChecking no" >> ~/.ssh/config
+
       - name: SSH Deployment
         uses: appleboy/ssh-action@master
         with:
-          host: ${host}
-          username: ${user}
-          key: ${private}
-          proxy_command: >
-            cloudflared access ssh --hostname %h
-            --id ${cf_client}
-            --secret ${cf_secret}
-          script: |
-            cd /home/rpastor05/MiKontrol-Client
-            echo *
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          run: |
+            ssh -o ProxyCommand="cloudflared access ssh --hostname ${{ env.SSH_HOST }} --id ${{ secrets.CF_CLIENT_ID }} --secret ${{ secrets.CF_CLIENT_SECRET }}" \
+            ${{env.SSH_USER}}@${{env.SSH_HOST}} << 'EOF'
+              cd /home/rpastor05/MiKontrol-Client
+              echo *
+            EOF
