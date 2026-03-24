@@ -24,10 +24,7 @@ jobs:
 
       - name: SSH Deployment (Tunnel)
         run: |
-          cloudflared --version
-          echo "HOST=${{ vars.SSH_HOST }}"
-          echo "USER=${{ vars.SSH_USER }}"
-          ssh -vvv -o ProxyCommand="cloudflared access ssh --hostname ${{ vars.SSH_HOST }}" \
+          ssh -vvv -o ProxyCommand="cloudflared access ssh --hostname ${{ vars.SSH_HOST }} --service-token-id ${{ secrets.CF_CLIENT_ID }} --service-token-secret ${{ secrets.CF_CLIENT_SECRET }}" \
           ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << 'EOF'
             cd /home/rpastor05/MiKontrol-Client
             echo *
