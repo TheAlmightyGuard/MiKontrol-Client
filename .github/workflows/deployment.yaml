@@ -24,7 +24,8 @@ jobs:
 
       - name: SSH Deployment (Tunnel)
         run: |
-          ssh -p 22 -o ProxyCommand="cloudflared access ssh --url ssh://${{ vars.SSH_HOST }}:22 --id ${{ secrets.CF_CLIENT_ID }} --secret ${{ secrets.CF_CLIENT_SECRET }}" \
+          ssh -T -p 22 \
+          -o ProxyCommand="cloudflared access ssh --url ssh://${{ vars.SSH_HOST }}:22 --id ${{ secrets.CF_CLIENT_ID }} --secret ${{ secrets.CF_CLIENT_SECRET }}" \
           ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << 'EOF'
             cd /home/rpastor05/MiKontrol-Client
             echo *
