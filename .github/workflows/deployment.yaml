@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'release'
+      - 'INTERNAL-4-WORKFLOW'
 
 env:
   pswd: ${{ secret.SSH_PSWD }}
