@@ -73,13 +73,17 @@ async def login_callback(code: str):
 
         response = RedirectResponse(WEB_REDIRECT)
 
+        is_production = os.getenv("NODE_ENV") == "production"
+
         response.set_cookie(
-            "session",
-            signed,
-            60*60*24*7,
+            key="session",
+            value=signed,
+            max_age=60 * 60 * 24 * 7,
             httponly=True,
+            secure=is_production,
             samesite="lax",
-            secure=True
+            path="/",
+            domain=".mikontrol.ca" if is_production else None,
         )
 
         return response
